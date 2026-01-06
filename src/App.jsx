@@ -4,6 +4,11 @@ import { OrbitControls, useGLTF } from '@react-three/drei'
 import { Color } from 'three'
 import './App.css'
 
+const buildModelUrl = (fileName) => {
+  const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '')
+  return `${base}/models/${fileName}`
+}
+
 function App() {
   const options = [
     {
@@ -12,7 +17,7 @@ function App() {
       description: 'Sleek lines, quiet cabins, and nimble city handling.',
       badge: 'Smooth & Efficient',
       icon: '🚗',
-      modelUrl: '/models/sedan.glb',
+      modelUrl: buildModelUrl('sedan.glb'),
       parts: [
         { name: 'Engine Oil', interval: '5,000–7,500 miles (6–9 months)' },
         { name: 'Oil Filter', interval: '5,000–7,500 miles (6–9 months)' },
@@ -39,7 +44,7 @@ function App() {
       description: 'Built for payloads, weekend toys, and endless adventures.',
       badge: 'Strength & Utility',
       icon: '🛻',
-      modelUrl: '/models/truck.glb',
+      modelUrl: buildModelUrl('truck.glb'),
       parts: [
         { name: 'Engine Oil', interval: '5,000–7,500 miles (6–9 months)' },
         { name: 'Oil Filter', interval: '5,000–7,500 miles (6–9 months)' },
@@ -68,7 +73,7 @@ function App() {
       description: 'Spacious interiors with confident, all-weather versatility.',
       badge: 'Comfort & Control',
       icon: '🚙',
-      modelUrl: '/Carproject/public/models/jeep_compass_2022_lowpoly.glb',
+      modelUrl: buildModelUrl('jeep_compass_2022_lowpoly.glb'),
       parts: [
         { name: 'Engine Oil', interval: '5,000–7,500 miles (6–9 months)' },
         { name: 'Oil Filter', interval: '5,000–7,500 miles (6–9 months)' },
@@ -260,7 +265,7 @@ function VehicleModel({ type, color, modelUrl }) {
     }
   }, [type])
 
-  const { scene } = useGLTF(modelUrl || '/models/sedan.glb')
+  const { scene } = useGLTF(modelUrl || buildModelUrl('sedan.glb'))
   const paintedScene = useMemo(() => scene.clone(true), [scene])
 
   useEffect(() => {
