@@ -1,7 +1,6 @@
-import { Suspense, useEffect, useMemo, useState } from 'react'
+import { Suspense, useMemo, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls, useGLTF } from '@react-three/drei'
-import { Color } from 'three'
+import { OrbitControls } from '@react-three/drei'
 import './App.css'
 
 function App() {
@@ -12,7 +11,6 @@ function App() {
       description: 'Sleek lines, quiet cabins, and nimble city handling.',
       badge: 'Smooth & Efficient',
       icon: '🚗',
-      modelUrl: '/models/sedan.glb',
       parts: [
         { name: 'Engine Oil', interval: '5,000–7,500 miles (6–9 months)' },
         { name: 'Oil Filter', interval: '5,000–7,500 miles (6–9 months)' },
@@ -26,7 +24,7 @@ function App() {
         { name: 'Transmission Fluid', interval: '60,000–100,000 miles (4–7 years)' }
       ],
       colors: [
-        { name: 'Turquoise', hex: '#23c9c9' },
+        { name: 'Electric Blue', hex: '#1e88ff' },
         { name: 'Midnight', hex: '#0f172a' },
         { name: 'Glacier', hex: '#dfe7f5' },
         { name: 'Cinder', hex: '#2f343d' },
@@ -39,7 +37,6 @@ function App() {
       description: 'Built for payloads, weekend toys, and endless adventures.',
       badge: 'Strength & Utility',
       icon: '🛻',
-      modelUrl: '/models/truck.glb',
       parts: [
         { name: 'Engine Oil', interval: '5,000–7,500 miles (6–9 months)' },
         { name: 'Oil Filter', interval: '5,000–7,500 miles (6–9 months)' },
@@ -55,7 +52,7 @@ function App() {
         { name: 'Suspension Components', interval: '50,000–100,000 miles (3–7 years)' }
       ],
       colors: [
-        { name: 'Turquoise', hex: '#23c9c9' },
+        { name: 'Electric Blue', hex: '#1e88ff' },
         { name: 'Canyon Red', hex: '#a02828' },
         { name: 'Summit White', hex: '#f7f8fb' },
         { name: 'Ironclad', hex: '#373a42' },
@@ -68,7 +65,6 @@ function App() {
       description: 'Spacious interiors with confident, all-weather versatility.',
       badge: 'Comfort & Control',
       icon: '🚙',
-      modelUrl: '/Carproject/public/models/jeep_compass_2022_lowpoly.glb',
       parts: [
         { name: 'Engine Oil', interval: '5,000–7,500 miles (6–9 months)' },
         { name: 'Oil Filter', interval: '5,000–7,500 miles (6–9 months)' },
@@ -83,7 +79,7 @@ function App() {
         { name: 'Suspension (shocks/struts)', interval: '60,000–100,000 miles (4–7 years)' }
       ],
       colors: [
-        { name: 'Turquoise', hex: '#23c9c9' },
+        { name: 'Electric Blue', hex: '#1e88ff' },
         { name: 'Evergreen', hex: '#1d4d3c' },
         { name: 'Lunar Mist', hex: '#cad6e8' },
         { name: 'Graphite', hex: '#2d3038' },
@@ -107,6 +103,20 @@ function App() {
     setSelectedColor(null)
     setVehicleName('')
   }
+
+  const sortedParts = useMemo(() => {
+    if (!selectedOption?.parts) return []
+
+    const parseInterval = (interval) => {
+      if (!interval) return Number.POSITIVE_INFINITY
+      const match = interval.replace(/,/g, '').match(/(\d+(\.\d+)?)/)
+      return match ? Number(match[1]) : Number.POSITIVE_INFINITY
+    }
+
+    return [...selectedOption.parts].sort(
+      (a, b) => parseInterval(a.interval) - parseInterval(b.interval),
+    )
+  }, [selectedOption])
 
   return (
     <main className="page">
@@ -166,11 +176,7 @@ function App() {
                     <ambientLight intensity={0.5} />
                     <directionalLight position={[2.5, 3, 2]} intensity={1.2} />
                     <spotLight position={[-2, 3, -2]} angle={0.45} intensity={0.6} />
-                    <VehicleModel
-                      type={selectedOption.label}
-                      color={selectedColor}
-                      modelUrl={selectedOption.modelUrl}
-                    />
+                    <VehicleModel type={selectedOption.label} color={selectedColor} />
                     <OrbitControls
                       enableZoom={false}
                       enablePan={false}
@@ -215,8 +221,8 @@ function App() {
                   <span className="badge subtle">Maintenance</span>
                 </div>
                 <div className="parts-grid">
-                  {selectedOption.parts && selectedOption.parts.length > 0 ? (
-                    selectedOption.parts.map((part) => (
+                  {sortedParts && sortedParts.length > 0 ? (
+                    sortedParts.map((part) => (
                       <div key={part.name} className="part-chip" role="button" tabIndex={0}>
                         <div className="part-name">{part.name}</div>
                         <div className="part-interval">{part.interval || 'Mileage coming soon'}</div>
@@ -246,37 +252,96 @@ function App() {
   )
 }
 
-function VehicleModel({ type, color, modelUrl }) {
-  const bodyColor = color || '#23c9c9'
+function VehicleModel({ type, color }) {
+  const bodyColor = color || '#1e88ff'
 
   const transform = useMemo(() => {
     switch (type) {
       case 'Truck':
-        return { scale: 0.85, rotation: [0, Math.PI / 8, 0], position: [0, -0.3, 0] }
+        return { scale: 1, rotation: [0, Math.PI / 14, 0], position: [0, -0.3, 0] }
       case 'SUV':
-        return { scale: 0.9, rotation: [0, Math.PI / 10, 0], position: [0, -0.32, 0] }
+        return { scale: 1, rotation: [0, Math.PI / 16, 0], position: [0, -0.32, 0] }
       default:
-        return { scale: 0.92, rotation: [0, Math.PI / 12, 0], position: [0, -0.32, 0] }
+        return { scale: 1, rotation: [0, Math.PI / 18, 0], position: [0, -0.28, 0] }
     }
   }, [type])
 
-  const { scene } = useGLTF(modelUrl || '/models/sedan.glb')
-  const paintedScene = useMemo(() => scene.clone(true), [scene])
-
-  useEffect(() => {
-    paintedScene.traverse((child) => {
-      if (child.isMesh && child.material) {
-        const mat = child.material
-        if (mat.color) mat.color = new Color(bodyColor)
-        if (mat.emissive) mat.emissive = new Color(bodyColor).multiplyScalar(0.12)
-        mat.needsUpdate = true
-      }
-    })
-  }, [paintedScene, bodyColor])
+  const roofOffset = type === 'Truck' ? 0.1 : 0.18
+  const bedLength = type === 'Truck' ? 0.4 : 0
+  const rearOverhang = type === 'SUV' ? 0.05 : 0
 
   return (
     <group position={transform.position} rotation={transform.rotation} scale={transform.scale}>
-      <primitive object={paintedScene} />
+      {/* Main body */}
+      <mesh position={[0, 0, rearOverhang / 2]}>
+        <boxGeometry args={[1.8, 0.35, 0.9 + rearOverhang]} />
+        <meshStandardMaterial color={bodyColor} metalness={0.2} roughness={0.5} />
+      </mesh>
+
+      {/* Roof / cabin */}
+      <mesh position={[0, 0.3 + roofOffset, 0]}>
+        <boxGeometry args={[1.1 + bedLength, 0.35, 0.8]} />
+        <meshStandardMaterial color={bodyColor} metalness={0.15} roughness={0.4} />
+      </mesh>
+
+      {/* Cabin glass */}
+      <mesh position={[0, 0.3 + roofOffset, 0]}>
+        <boxGeometry args={[1.05, 0.28, 0.75]} />
+        <meshStandardMaterial color="#5fa7ff" metalness={0.4} roughness={0.2} transparent opacity={0.75} />
+      </mesh>
+
+      {/* Truck bed */}
+      {type === 'Truck' && (
+        <mesh position={[0.55, 0.05, 0]}>
+          <boxGeometry args={[0.7, 0.35, 0.92]} />
+          <meshStandardMaterial color={bodyColor} metalness={0.2} roughness={0.45} />
+        </mesh>
+      )}
+
+      {/* Wheels */}
+      {[
+        [-0.65, -0.25, 0.55],
+        [0.65, -0.25, 0.55],
+        [-0.65, -0.25, -0.55],
+        [0.65, -0.25, -0.55],
+      ].map((pos) => (
+        <Wheel key={pos.join('-')} position={pos} />
+      ))}
+
+      {/* Headlights */}
+      <mesh position={[-0.95, 0, 0.3]}>
+        <boxGeometry args={[0.05, 0.12, 0.22]} />
+        <meshStandardMaterial emissive="#cde6ff" emissiveIntensity={2} color="#cde6ff" />
+      </mesh>
+      <mesh position={[-0.95, 0, -0.3]}>
+        <boxGeometry args={[0.05, 0.12, 0.22]} />
+        <meshStandardMaterial emissive="#cde6ff" emissiveIntensity={2} color="#cde6ff" />
+      </mesh>
+
+      {/* Taillights */}
+      <mesh position={[0.95 + bedLength / 2, 0, 0.3]}>
+        <boxGeometry args={[0.05, 0.12, 0.22]} />
+        <meshStandardMaterial emissive="#ff5555" emissiveIntensity={1.4} color="#ff7777" />
+      </mesh>
+      <mesh position={[0.95 + bedLength / 2, 0, -0.3]}>
+        <boxGeometry args={[0.05, 0.12, 0.22]} />
+        <meshStandardMaterial emissive="#ff5555" emissiveIntensity={1.4} color="#ff7777" />
+      </mesh>
+    </group>
+  )
+}
+
+function Wheel({ position }) {
+  return (
+    <group position={position} rotation={[0, 0, Math.PI / 2]}>
+      <mesh>
+        <cylinderGeometry args={[0.18, 0.18, 0.25, 24]} />
+        <meshStandardMaterial color="#0b0d11" roughness={0.8} />
+      </mesh>
+      <mesh position={[0, 0, 0]}>
+        <cylinderGeometry args={[0.08, 0.08, 0.26, 16]} />
+        <meshStandardMaterial color="#d9e3f5" roughness={0.4} metalness={0.4} />
+      </mesh>
     </group>
   )
 }

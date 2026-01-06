@@ -1,6 +1,6 @@
 .page {
   min-height: 100vh;
-  padding: 3rem clamp(1.5rem, 3vw, 3.5rem) 4rem;
+  padding: 2.5rem clamp(1rem, 4vw, 3.25rem) 3rem;
   background: radial-gradient(circle at 20% 20%, rgba(113, 178, 255, 0.08), transparent 25%),
     radial-gradient(circle at 80% 0%, rgba(255, 148, 225, 0.08), transparent 25%),
     #0f1115;
@@ -67,7 +67,7 @@ h1 {
 
 .options-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1rem;
   animation: fade-up 320ms ease forwards;
 }
@@ -209,8 +209,8 @@ h1 {
 
 .model-visual {
   position: relative;
-  width: min(640px, 90vw);
-  aspect-ratio: 16 / 9;
+  width: min(720px, 100%);
+  aspect-ratio: 4 / 3;
   border-radius: 20px;
   margin: 0 auto;
   background: radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.06), transparent 60%),
@@ -399,6 +399,76 @@ h1 {
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
   border: 0;
+}
+
+@media (max-width: 900px) {
+  .page {
+    padding: 2rem clamp(0.9rem, 5vw, 2rem) 2.5rem;
+  }
+
+  .model-panel {
+    padding: 1.5rem;
+  }
+
+  .options-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+
+  .model-visual {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+  }
+
+  .parts-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 1.5rem 1rem 2rem;
+  }
+
+  h1 {
+    font-size: clamp(2.2rem, 8vw, 3rem);
+  }
+
+  .option-card {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      'content arrow'
+      'content arrow';
+  }
+
+  .option-icon {
+    display: none;
+  }
+
+  .option-content {
+    grid-area: content;
+  }
+
+  .option-arrow {
+    grid-area: arrow;
+  }
+
+  .model-panel {
+    padding: 1.25rem;
+  }
+
+  .model-name {
+    font-size: clamp(1.7rem, 7vw, 2.3rem);
+  }
+
+  .model-visual {
+    aspect-ratio: 1.1 / 1;
+  }
+
+  .footnote {
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    width: 100%;
+  }
 }
 
 @keyframes fade-up {
