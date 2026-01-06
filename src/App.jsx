@@ -12,16 +12,16 @@ function App() {
       badge: 'Smooth & Efficient',
       icon: '🚗',
       parts: [
-        'Engine Oil',
-        'Oil Filter',
-        'Brake Pads',
-        'Brake Rotors',
-        'Tires',
-        'Battery',
-        'Engine Air Filter',
-        'Cabin Air Filter',
-        'Spark Plugs',
-        'Transmission Fluid'
+        { name: 'Engine Oil', interval: '5,000–7,500 miles (6–9 months)' },
+        { name: 'Oil Filter', interval: '5,000–7,500 miles (6–9 months)' },
+        { name: 'Brake Pads', interval: '30,000–70,000 miles (2–5 years)' },
+        { name: 'Brake Rotors', interval: '60,000–100,000 miles (4–7 years)' },
+        { name: 'Tires', interval: '40,000–60,000 miles (3–5 years)' },
+        { name: 'Battery', interval: '3–5 years' },
+        { name: 'Engine Air Filter', interval: '12,000–20,000 miles (1–2 years)' },
+        { name: 'Cabin Air Filter', interval: '15,000–30,000 miles (1–2 years)' },
+        { name: 'Spark Plugs', interval: '60,000–100,000 miles (4–7 years)' },
+        { name: 'Transmission Fluid', interval: '60,000–100,000 miles (4–7 years)' }
       ],
       colors: [
         { name: 'Midnight', hex: '#0f172a' },
@@ -37,18 +37,18 @@ function App() {
       badge: 'Strength & Utility',
       icon: '🛻',
       parts: [
-        'Engine Oil',
-        'Oil Filter',
-        'Brake Pads',
-        'Brake Rotors',
-        'Tires',
-        'Battery',
-        'Engine Air Filter',
-        'Cabin Air Filter',
-        'Spark Plugs',
-        'Transmission Fluid',
-        'Differential Fluid',
-        'Suspension Components'
+        { name: 'Engine Oil', interval: 'TBD' },
+        { name: 'Oil Filter', interval: 'TBD' },
+        { name: 'Brake Pads', interval: 'TBD' },
+        { name: 'Brake Rotors', interval: 'TBD' },
+        { name: 'Tires', interval: 'TBD' },
+        { name: 'Battery', interval: 'TBD' },
+        { name: 'Engine Air Filter', interval: 'TBD' },
+        { name: 'Cabin Air Filter', interval: 'TBD' },
+        { name: 'Spark Plugs', interval: 'TBD' },
+        { name: 'Transmission Fluid', interval: 'TBD' },
+        { name: 'Differential Fluid', interval: 'TBD' },
+        { name: 'Suspension Components', interval: 'TBD' }
       ],
       colors: [
         { name: 'Canyon Red', hex: '#a02828' },
@@ -64,17 +64,17 @@ function App() {
       badge: 'Comfort & Control',
       icon: '🚙',
       parts: [
-        'Engine Oil',
-        'Oil Filter',
-        'Brake Pads',
-        'Brake Rotors',
-        'Tires',
-        'Battery',
-        'Engine Air Filter',
-        'Cabin Air Filter',
-        'Spark Plugs',
-        'Transmission Fluid',
-        'Suspension (Shocks / Struts)'
+        { name: 'Engine Oil', interval: 'TBD' },
+        { name: 'Oil Filter', interval: 'TBD' },
+        { name: 'Brake Pads', interval: 'TBD' },
+        { name: 'Brake Rotors', interval: 'TBD' },
+        { name: 'Tires', interval: 'TBD' },
+        { name: 'Battery', interval: 'TBD' },
+        { name: 'Engine Air Filter', interval: 'TBD' },
+        { name: 'Cabin Air Filter', interval: 'TBD' },
+        { name: 'Spark Plugs', interval: 'TBD' },
+        { name: 'Transmission Fluid', interval: 'TBD' },
+        { name: 'Suspension (Shocks / Struts)', interval: 'TBD' }
       ],
       colors: [
         { name: 'Evergreen', hex: '#1d4d3c' },
@@ -203,13 +203,20 @@ function App() {
                   <h3>Key parts</h3>
                   <span className="badge subtle">Maintenance</span>
                 </div>
-                <ul>
+                <div className="parts-grid">
                   {selectedOption.parts && selectedOption.parts.length > 0 ? (
-                    selectedOption.parts.map((part) => <li key={part}>{part}</li>)
+                    selectedOption.parts.map((part) => (
+                      <div key={part.name} className="part-chip">
+                        <div className="part-name">{part.name}</div>
+                        <div className="part-interval">{part.interval || 'Mileage coming soon'}</div>
+                      </div>
+                    ))
                   ) : (
-                    <li>Parts list coming soon.</li>
+                    <div className="part-chip">
+                      <div className="part-name">Parts list coming soon</div>
+                    </div>
                   )}
-                </ul>
+                </div>
               </div>
             </div>
 
@@ -238,7 +245,7 @@ function VehicleModel({ type, color }) {
           body: { position: [0, 0.55, 0], args: [2.4, 0.5, 1] },
           roof: { position: [0.3, 0.95, 0], args: [1.4, 0.35, 1] },
           bed: { position: [-0.75, 0.65, 0], args: [0.8, 0.42, 1] },
-          windows: { position: [0.2, 0.95, 0], args: [1.2, 0.32, 0.82] },
+          windows: { position: [0.25, 0.95, 0], args: [1.35, 0.32, 0.82] },
           wheels: [
             [-1.15, 0.1, 0.65],
             [1.15, 0.1, 0.65],
