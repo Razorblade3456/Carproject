@@ -68,7 +68,7 @@ function App() {
       description: 'Spacious interiors with confident, all-weather versatility.',
       badge: 'Comfort & Control',
       icon: '🚙',
-      modelUrl: '/Carproject/public/models/jeep_compass_2022_lowpoly.glb',
+      modelUrl: '/models/jeep_compass_2022_lowpoly.glb',
       parts: [
         { name: 'Engine Oil', interval: '5,000–7,500 miles (6–9 months)' },
         { name: 'Oil Filter', interval: '5,000–7,500 miles (6–9 months)' },
