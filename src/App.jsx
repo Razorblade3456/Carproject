@@ -9,8 +9,8 @@ function App() {
     {
       label: 'Sedan',
       model: 'Aurora S3',
-      description: 'Sleek lines, quiet cabins, and nimble city handling.',
-      badge: 'Smooth & Efficient',
+      description: 'Sleek lines. Quiet cabin. City sharp.',
+      badge: 'Smooth & Fast',
       icon: '🚗',
       modelUrl: '/models/sedan.glb',
       parts: [
@@ -36,8 +36,8 @@ function App() {
     {
       label: 'Truck',
       model: 'RidgeLine X',
-      description: 'Built for payloads, weekend toys, and endless adventures.',
-      badge: 'Strength & Utility',
+      description: 'Hauls hard. Trails easy. Built to roam.',
+      badge: 'Power & Grip',
       icon: '🛻',
       modelUrl: '/models/truck.glb',
       parts: [
@@ -65,8 +65,8 @@ function App() {
     {
       label: 'SUV',
       model: 'Atlas E7',
-      description: 'Spacious interiors with confident, all-weather versatility.',
-      badge: 'Comfort & Control',
+      description: 'Room to move. Ready for any weather.',
+      badge: 'Comfort & Edge',
       icon: '🚙',
       modelUrl: '/Carproject/public/models/jeep_compass_2022_lowpoly.glb',
       parts: [
@@ -114,14 +114,13 @@ function App() {
       <div className="background-glow background-glow--right" />
 
       <section className="hero">
-        <p className="eyebrow">Welcome to your next drive</p>
+        <p className="eyebrow">Neon garage online</p>
         <h1>
-          Choose your
-          <span className="highlight"> perfect fit</span>
+          Pick your next
+          <span className="highlight"> neon ride</span>
         </h1>
         <p className="lede">
-          Explore the lineup and start with the category that matches your lifestyle.
-          Each option is crafted with comfort, capability, and style in mind.
+          Scan the lineup. Tap a category. Dial the vibe.
         </p>
 
         {!selectedOption ? (
@@ -182,17 +181,17 @@ function App() {
               </div>
 
               <label className="name-field">
-                <span>Name your vehicle</span>
+                <span>Name your ride</span>
                 <input
                   type="text"
                   value={vehicleName}
-                  placeholder="e.g., Midnight Cruiser"
+                  placeholder="e.g., Neon Drift"
                   onChange={(e) => setVehicleName(e.target.value)}
                 />
               </label>
 
               <div className="palette">
-                <span className="palette-label">Choose a color</span>
+                <span className="palette-label">Pick a hue</span>
                 <div className="swatches">
                   {selectedOption.colors.map((color) => (
                     <button
@@ -211,7 +210,7 @@ function App() {
 
               <div className="parts-card">
                 <div className="parts-header">
-                  <h3>Key parts</h3>
+                  <h3>Core parts</h3>
                   <span className="badge subtle">Maintenance</span>
                 </div>
                 <div className="parts-grid">
@@ -233,9 +232,9 @@ function App() {
 
             <div className="footnote">
               <span className="dot" aria-hidden />
-              Start customizing your {selectedOption.label.toLowerCase()} or{' '}
+              Tune this {selectedOption.label.toLowerCase()} or{' '}
               <button className="link-button" type="button" onClick={handleReset}>
-                choose a different category
+                swap categories
               </button>
               .
             </div>
