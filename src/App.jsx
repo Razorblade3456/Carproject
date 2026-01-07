@@ -8,7 +8,7 @@ function App() {
     {
       label: 'Sedan',
       model: 'Aurora S3',
-      description: 'Sleek lines, quiet cabins, and nimble city handling.',
+      description: 'Quiet cabin. Sharp handling. Easy city moves.',
       badge: 'Smooth & Efficient',
       icon: '🚗',
       parts: [
@@ -34,7 +34,7 @@ function App() {
     {
       label: 'Truck',
       model: 'RidgeLine X',
-      description: 'Built for payloads, weekend toys, and endless adventures.',
+      description: 'Built for payloads and weekend missions.',
       badge: 'Strength & Utility',
       icon: '🛻',
       parts: [
@@ -62,7 +62,7 @@ function App() {
     {
       label: 'SUV',
       model: 'Atlas E7',
-      description: 'Spacious interiors with confident, all-weather versatility.',
+      description: 'Spacious, calm, and ready for any weather.',
       badge: 'Comfort & Control',
       icon: '🚙',
       parts: [
@@ -91,6 +91,9 @@ function App() {
   const [selectedOption, setSelectedOption] = useState(null)
   const [selectedColor, setSelectedColor] = useState(null)
   const [vehicleName, setVehicleName] = useState('')
+  const [partName, setPartName] = useState('')
+  const [partAge, setPartAge] = useState('')
+  const [partAgeUnit, setPartAgeUnit] = useState('months')
 
   const handleSelect = (option) => {
     setSelectedOption(option)
@@ -102,6 +105,9 @@ function App() {
     setSelectedOption(null)
     setSelectedColor(null)
     setVehicleName('')
+    setPartName('')
+    setPartAge('')
+    setPartAgeUnit('months')
   }
 
   return (
@@ -110,14 +116,13 @@ function App() {
       <div className="background-glow background-glow--right" />
 
       <section className="hero">
-        <p className="eyebrow">Welcome to your next drive</p>
+        <p className="eyebrow">Next drive, unlocked</p>
         <h1>
           Choose your
           <span className="highlight"> perfect fit</span>
         </h1>
         <p className="lede">
-          Explore the lineup and start with the category that matches your lifestyle.
-          Each option is crafted with comfort, capability, and style in mind.
+          Pick a category. Tune the vibe. Keep the journey smooth.
         </p>
 
         {!selectedOption ? (
@@ -201,11 +206,11 @@ function App() {
                 </div>
               </div>
 
-              <div className="parts-card">
-                <div className="parts-header">
-                  <h3>Key parts</h3>
-                  <span className="badge subtle">Maintenance</span>
-                </div>
+                <div className="parts-card">
+                  <div className="parts-header">
+                    <h3>Key parts</h3>
+                    <span className="badge subtle">Maintenance</span>
+                  </div>
                 <div className="parts-grid">
                   {selectedOption.parts && selectedOption.parts.length > 0 ? (
                     selectedOption.parts.map((part) => (
@@ -219,6 +224,52 @@ function App() {
                       <div className="part-name">Parts list coming soon</div>
                     </div>
                   )}
+                </div>
+
+                <div className="parts-card maintenance-card">
+                  <div className="parts-header">
+                    <h3>Part age tracker</h3>
+                    <span className="badge subtle">Log</span>
+                  </div>
+                  <p className="card-note">Track the age of any part for quick upkeep.</p>
+                  <div className="tracker-grid">
+                    <label className="name-field">
+                      <span>Part name</span>
+                      <input
+                        type="text"
+                        value={partName}
+                        placeholder="e.g., Battery"
+                        onChange={(e) => setPartName(e.target.value)}
+                      />
+                    </label>
+                    <label className="name-field">
+                      <span>Age</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={partAge}
+                        placeholder="0"
+                        onChange={(e) => setPartAge(e.target.value)}
+                      />
+                    </label>
+                    <label className="name-field">
+                      <span>Unit</span>
+                      <select value={partAgeUnit} onChange={(e) => setPartAgeUnit(e.target.value)}>
+                        <option value="months">Months</option>
+                        <option value="years">Years</option>
+                      </select>
+                    </label>
+                  </div>
+                  <div className="tracker-summary">
+                    <span className="tracker-dot" aria-hidden />
+                    {partName && partAge ? (
+                      <span>
+                        Tracking {partName} · {partAge} {partAgeUnit}
+                      </span>
+                    ) : (
+                      <span>Enter a part and age to start tracking.</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
