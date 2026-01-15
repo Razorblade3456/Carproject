@@ -8,7 +8,7 @@ function App() {
     {
       label: 'Sedan',
       model: 'Aurora S3',
-      description: 'Sleek lines, quiet cabins, and nimble city handling.',
+      description: 'Quiet cabin. Sharp handling. Easy city moves.',
       badge: 'Smooth & Efficient',
       icon: '🚗',
       parts: [
@@ -34,7 +34,7 @@ function App() {
     {
       label: 'Truck',
       model: 'RidgeLine X',
-      description: 'Built for payloads, weekend toys, and endless adventures.',
+      description: 'Built for payloads and weekend missions.',
       badge: 'Strength & Utility',
       icon: '🛻',
       parts: [
@@ -62,7 +62,7 @@ function App() {
     {
       label: 'SUV',
       model: 'Atlas E7',
-      description: 'Spacious interiors with confident, all-weather versatility.',
+      description: 'Spacious, calm, and ready for any weather.',
       badge: 'Comfort & Control',
       icon: '🚙',
       parts: [
@@ -91,6 +91,10 @@ function App() {
   const [selectedOption, setSelectedOption] = useState(null)
   const [selectedColor, setSelectedColor] = useState(null)
   const [vehicleName, setVehicleName] = useState('')
+  const [partName, setPartName] = useState('')
+  const [partAge, setPartAge] = useState('')
+  const [partAgeUnit, setPartAgeUnit] = useState('months')
+  const [customParts, setCustomParts] = useState([])
 
   const handleSelect = (option) => {
     setSelectedOption(option)
@@ -102,6 +106,60 @@ function App() {
     setSelectedOption(null)
     setSelectedColor(null)
     setVehicleName('')
+    setPartName('')
+    setPartAge('')
+    setPartAgeUnit('months')
+    setCustomParts([])
+  }
+
+  const handleAddPart = () => {
+    if (!partName.trim() || !partAge) {
+      return
+    }
+
+    const ageValue = Number(partAge)
+    if (!ageValue || ageValue <= 0) {
+      return
+    }
+
+    const durationMs =
+      partAgeUnit === 'years'
+        ? ageValue * 365 * 24 * 60 * 60 * 1000
+        : partAgeUnit === 'weeks'
+          ? ageValue * 7 * 24 * 60 * 60 * 1000
+          : ageValue * 30 * 24 * 60 * 60 * 1000
+
+    const newPart = {
+      name: partName.trim(),
+      interval: `${partAge} ${partAgeUnit}`,
+      isCustom: true,
+      id: `${partName}-${partAge}-${partAgeUnit}-${Date.now()}`,
+      createdAt: Date.now(),
+      durationMs
+    }
+
+    setCustomParts((prev) => [newPart, ...prev])
+    setPartName('')
+    setPartAge('')
+  }
+
+  const handleRemovePart = (id) => {
+    setCustomParts((prev) => prev.filter((part) => part.id !== id))
+  }
+
+  const handleResetPart = (id) => {
+    setCustomParts((prev) =>
+      prev.map((part) => (part.id === id ? { ...part, createdAt: Date.now() } : part))
+    )
+  }
+
+  const getProgress = (part) => {
+    if (!part.durationMs || !part.createdAt) {
+      return 0
+    }
+
+    const elapsed = Date.now() - part.createdAt
+    return Math.min(Math.max(elapsed / part.durationMs, 0), 1)
   }
 
   return (
@@ -110,14 +168,13 @@ function App() {
       <div className="background-glow background-glow--right" />
 
       <section className="hero">
-        <p className="eyebrow">Welcome to your next drive</p>
+        <p className="eyebrow">Next drive, unlocked</p>
         <h1>
           Choose your
           <span className="highlight"> perfect fit</span>
         </h1>
         <p className="lede">
-          Explore the lineup and start with the category that matches your lifestyle.
-          Each option is crafted with comfort, capability, and style in mind.
+          Pick a category. Tune the vibe. Keep the journey smooth.
         </p>
 
         {!selectedOption ? (
@@ -201,24 +258,135 @@ function App() {
                 </div>
               </div>
 
-              <div className="parts-card">
-                <div className="parts-header">
-                  <h3>Key parts</h3>
-                  <span className="badge subtle">Maintenance</span>
-                </div>
+                <div className="parts-card">
+                  <div className="parts-header">
+                    <h3>Key parts</h3>
+                    <span className="badge subtle">Maintenance</span>
+                  </div>
                 <div className="parts-grid">
-                  {selectedOption.parts && selectedOption.parts.length > 0 ? (
-                    selectedOption.parts.map((part) => (
-                      <div key={part.name} className="part-chip" role="button" tabIndex={0}>
-                        <div className="part-name">{part.name}</div>
-                        <div className="part-interval">{part.interval || 'Mileage coming soon'}</div>
+                  {[...customParts, ...(selectedOption.parts || [])].length > 0 ? (
+                    [...customParts, ...(selectedOption.parts || [])].map((part) => {
+                      const progress = part.isCustom ? getProgress(part) : 0
+                      const remainingMs = part.isCustom ? part.durationMs - (Date.now() - part.createdAt) : null
+                      const remainingDays =
+                        part.isCustom && remainingMs > 0 ? Math.ceil(remainingMs / (24 * 60 * 60 * 1000)) : 0
+                      const isDue = part.isCustom ? remainingMs <= 0 : false
+                      const isCritical = part.isCustom ? progress >= 0.8 : false
+                      const statusLabel = part.isCustom
+                        ? isDue
+                          ? 'Replace now'
+                          : `${remainingDays} day${remainingDays === 1 ? '' : 's'} left`
+                        : null
+
+                      return (
+                      <div key={part.id || part.name} className="part-chip" role="button" tabIndex={0}>
+                        <div className="part-chip-row">
+                          <div className="part-name">{part.name}</div>
+                          {part.isCustom ? (
+                            <div className="part-actions">
+                              <button
+                                className="part-reset"
+                                type="button"
+                                onClick={() => handleResetPart(part.id)}
+                                aria-label={`Reset ${part.name} timer`}
+                              >
+                                🔁
+                              </button>
+                              <button
+                                className="part-remove"
+                                type="button"
+                                onClick={() => handleRemovePart(part.id)}
+                                aria-label={`Remove ${part.name}`}
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          ) : null}
+                        </div>
+                        <div className="part-interval">
+                          {part.interval || 'Mileage coming soon'}
+                          {part.isCustom ? <span className="part-tag">Custom log</span> : null}
+                        </div>
+                        {part.isCustom ? (
+                          <div className="part-progress" style={{ '--progress': progress }}>
+                            <div className="part-progress-track" aria-hidden>
+                              <div
+                                className={`part-progress-fill${isDue || isCritical ? ' is-critical' : ''}`}
+                                style={{ width: `${progress * 100}%` }}
+                              />
+                              <div className="part-progress-marker" />
+                            </div>
+                            <div className={`part-progress-label ${isDue ? 'is-due' : ''}`}>
+                              {statusLabel}
+                            </div>
+                          </div>
+                        ) : null}
                       </div>
-                    ))
+                      )
+                    })
                   ) : (
                     <div className="part-chip">
                       <div className="part-name">Parts list coming soon</div>
                     </div>
                   )}
+                </div>
+
+                <div className="parts-card maintenance-card">
+                  <div className="parts-header">
+                    <h3>Part age tracker</h3>
+                    <span className="badge subtle">Log</span>
+                  </div>
+                  <p className="card-note">Log a part to keep maintenance on track.</p>
+                  <div className="tracker-grid">
+                    <label className="name-field">
+                      <span>Part name</span>
+                      <input
+                        type="text"
+                        value={partName}
+                        placeholder="e.g., Battery"
+                        onChange={(e) => setPartName(e.target.value)}
+                      />
+                    </label>
+                    <label className="name-field">
+                      <span>Age</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={partAge}
+                        placeholder="0"
+                        onChange={(e) => setPartAge(e.target.value)}
+                      />
+                    </label>
+                    <label className="name-field">
+                      <span>Unit</span>
+                      <select value={partAgeUnit} onChange={(e) => setPartAgeUnit(e.target.value)}>
+                        <option value="weeks">Weeks</option>
+                        <option value="months">Months</option>
+                        <option value="years">Years</option>
+                      </select>
+                    </label>
+                    <div className="tracker-actions">
+                      <span className="tracker-label">Add to list</span>
+                      <button
+                        className="tracker-button"
+                        type="button"
+                        onClick={handleAddPart}
+                        disabled={!partName.trim() || !partAge}
+                      >
+                        Add part
+                      </button>
+                    </div>
+                  </div>
+                  <div className="tracker-summary">
+                    <span className="tracker-dot" aria-hidden />
+                    {partName && partAge ? (
+                      <span>
+                        Tracking {partName} · {partAge} {partAgeUnit}
+                      </span>
+                    ) : (
+                      <span>Enter a part and age to start tracking.</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
