@@ -1,96 +1,216 @@
-import { Suspense, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import './App.css'
 
-function App() {
-  const options = [
-    {
-      label: 'Sedan',
-      model: 'Aurora S3',
-      description: 'Sleek lines, quiet cabins, and nimble city handling.',
-      badge: 'Smooth & Efficient',
-      icon: '🚗',
-      parts: [
-        { name: 'Engine Oil', interval: '5,000–7,500 miles (6–9 months)' },
-        { name: 'Oil Filter', interval: '5,000–7,500 miles (6–9 months)' },
-        { name: 'Brake Pads', interval: '30,000–70,000 miles (2–5 years)' },
-        { name: 'Brake Rotors', interval: '60,000–100,000 miles (4–7 years)' },
-        { name: 'Tires', interval: '40,000–60,000 miles (3–5 years)' },
-        { name: 'Battery', interval: '3–5 years' },
-        { name: 'Engine Air Filter', interval: '12,000–20,000 miles (1–2 years)' },
-        { name: 'Cabin Air Filter', interval: '15,000–30,000 miles (1–2 years)' },
-        { name: 'Spark Plugs', interval: '60,000–100,000 miles (4–7 years)' },
-        { name: 'Transmission Fluid', interval: '60,000–100,000 miles (4–7 years)' }
-      ],
-      colors: [
-        { name: 'Electric Blue', hex: '#1e88ff' },
-        { name: 'Midnight', hex: '#0f172a' },
-        { name: 'Glacier', hex: '#dfe7f5' },
-        { name: 'Cinder', hex: '#2f343d' },
-        { name: 'Solar Flare', hex: '#ff8d5c' }
-      ]
-    },
-    {
-      label: 'Truck',
-      model: 'RidgeLine X',
-      description: 'Built for payloads, weekend toys, and endless adventures.',
-      badge: 'Strength & Utility',
-      icon: '🛻',
-      parts: [
-        { name: 'Engine Oil', interval: '5,000–7,500 miles (6–9 months)' },
-        { name: 'Oil Filter', interval: '5,000–7,500 miles (6–9 months)' },
-        { name: 'Brake Pads', interval: '25,000–50,000 miles (2–4 years)' },
-        { name: 'Brake Rotors', interval: '50,000–80,000 miles (3–5 years)' },
-        { name: 'Tires', interval: '30,000–50,000 miles (2–4 years)' },
-        { name: 'Battery', interval: '3–5 years' },
-        { name: 'Engine Air Filter', interval: '10,000–20,000 miles (1–2 years)' },
-        { name: 'Cabin Air Filter', interval: '15,000–30,000 miles (1–2 years)' },
-        { name: 'Spark Plugs', interval: '60,000–100,000 miles (4–7 years)' },
-        { name: 'Transmission Fluid', interval: '40,000–80,000 miles (3–5 years)' },
-        { name: 'Differential Fluid', interval: '30,000–60,000 miles (2–4 years)' },
-        { name: 'Suspension Components', interval: '50,000–100,000 miles (3–7 years)' }
-      ],
-      colors: [
-        { name: 'Electric Blue', hex: '#1e88ff' },
-        { name: 'Canyon Red', hex: '#a02828' },
-        { name: 'Summit White', hex: '#f7f8fb' },
-        { name: 'Ironclad', hex: '#373a42' },
-        { name: 'Desert Tan', hex: '#c0a074' }
-      ]
-    },
-    {
-      label: 'SUV',
-      model: 'Atlas E7',
-      description: 'Spacious interiors with confident, all-weather versatility.',
-      badge: 'Comfort & Control',
-      icon: '🚙',
-      parts: [
-        { name: 'Engine Oil', interval: '5,000–7,500 miles (6–9 months)' },
-        { name: 'Oil Filter', interval: '5,000–7,500 miles (6–9 months)' },
-        { name: 'Brake Pads', interval: '30,000–60,000 miles (2–4 years)' },
-        { name: 'Brake Rotors', interval: '60,000–90,000 miles (4–6 years)' },
-        { name: 'Tires', interval: '35,000–55,000 miles (3–4 years)' },
-        { name: 'Battery', interval: '3–5 years' },
-        { name: 'Engine Air Filter', interval: '12,000–20,000 miles (1–2 years)' },
-        { name: 'Cabin Air Filter', interval: '15,000–30,000 miles (1–2 years)' },
-        { name: 'Spark Plugs', interval: '60,000–100,000 miles (4–7 years)' },
-        { name: 'Transmission Fluid', interval: '50,000–90,000 miles (4–6 years)' },
-        { name: 'Suspension (shocks/struts)', interval: '60,000–100,000 miles (4–7 years)' }
-      ],
-      colors: [
-        { name: 'Electric Blue', hex: '#1e88ff' },
-        { name: 'Evergreen', hex: '#1d4d3c' },
-        { name: 'Lunar Mist', hex: '#cad6e8' },
-        { name: 'Graphite', hex: '#2d3038' },
-        { name: 'Harbor Blue', hex: '#5d7ea6' }
-      ]
-    }
-  ]
+const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_OAUTH_CLIENT_ID'
+const STORAGE_PREFIX = 'carproject:user:'
+const VEHICLE_OPTIONS = [
+  {
+    label: 'Sedan',
+    model: 'Aurora S3',
+    description: 'Quiet cabin. Sharp handling. Easy city moves.',
+    badge: 'Smooth & Efficient',
+    icon: '🚗',
+    parts: [
+      { name: 'Engine Oil', interval: '5,000–7,500 miles (6–9 months)' },
+      { name: 'Oil Filter', interval: '5,000–7,500 miles (6–9 months)' },
+      { name: 'Brake Pads', interval: '30,000–70,000 miles (2–5 years)' },
+      { name: 'Brake Rotors', interval: '60,000–100,000 miles (4–7 years)' },
+      { name: 'Tires', interval: '40,000–60,000 miles (3–5 years)' },
+      { name: 'Battery', interval: '3–5 years' },
+      { name: 'Engine Air Filter', interval: '12,000–20,000 miles (1–2 years)' },
+      { name: 'Cabin Air Filter', interval: '15,000–30,000 miles (1–2 years)' },
+      { name: 'Spark Plugs', interval: '60,000–100,000 miles (4–7 years)' },
+      { name: 'Transmission Fluid', interval: '60,000–100,000 miles (4–7 years)' }
+    ],
+    colors: [
+      { name: 'Electric Blue', hex: '#1e88ff' },
+      { name: 'Midnight', hex: '#0f172a' },
+      { name: 'Glacier', hex: '#dfe7f5' },
+      { name: 'Cinder', hex: '#2f343d' },
+      { name: 'Solar Flare', hex: '#ff8d5c' }
+    ]
+  },
+  {
+    label: 'Truck',
+    model: 'RidgeLine X',
+    description: 'Built for payloads and weekend missions.',
+    badge: 'Strength & Utility',
+    icon: '🛻',
+    parts: [
+      { name: 'Engine Oil', interval: '5,000–7,500 miles (6–9 months)' },
+      { name: 'Oil Filter', interval: '5,000–7,500 miles (6–9 months)' },
+      { name: 'Brake Pads', interval: '25,000–50,000 miles (2–4 years)' },
+      { name: 'Brake Rotors', interval: '50,000–80,000 miles (3–5 years)' },
+      { name: 'Tires', interval: '30,000–50,000 miles (2–4 years)' },
+      { name: 'Battery', interval: '3–5 years' },
+      { name: 'Engine Air Filter', interval: '10,000–20,000 miles (1–2 years)' },
+      { name: 'Cabin Air Filter', interval: '15,000–30,000 miles (1–2 years)' },
+      { name: 'Spark Plugs', interval: '60,000–100,000 miles (4–7 years)' },
+      { name: 'Transmission Fluid', interval: '40,000–80,000 miles (3–5 years)' },
+      { name: 'Differential Fluid', interval: '30,000–60,000 miles (2–4 years)' },
+      { name: 'Suspension Components', interval: '50,000–100,000 miles (3–7 years)' }
+    ],
+    colors: [
+      { name: 'Electric Blue', hex: '#1e88ff' },
+      { name: 'Canyon Red', hex: '#a02828' },
+      { name: 'Summit White', hex: '#f7f8fb' },
+      { name: 'Ironclad', hex: '#373a42' },
+      { name: 'Desert Tan', hex: '#c0a074' }
+    ]
+  },
+  {
+    label: 'SUV',
+    model: 'Atlas E7',
+    description: 'Spacious, calm, and ready for any weather.',
+    badge: 'Comfort & Control',
+    icon: '🚙',
+    parts: [
+      { name: 'Engine Oil', interval: '5,000–7,500 miles (6–9 months)' },
+      { name: 'Oil Filter', interval: '5,000–7,500 miles (6–9 months)' },
+      { name: 'Brake Pads', interval: '30,000–60,000 miles (2–4 years)' },
+      { name: 'Brake Rotors', interval: '60,000–90,000 miles (4–6 years)' },
+      { name: 'Tires', interval: '35,000–55,000 miles (3–4 years)' },
+      { name: 'Battery', interval: '3–5 years' },
+      { name: 'Engine Air Filter', interval: '12,000–20,000 miles (1–2 years)' },
+      { name: 'Cabin Air Filter', interval: '15,000–30,000 miles (1–2 years)' },
+      { name: 'Spark Plugs', interval: '60,000–100,000 miles (4–7 years)' },
+      { name: 'Transmission Fluid', interval: '50,000–90,000 miles (4–6 years)' },
+      { name: 'Suspension (shocks/struts)', interval: '60,000–100,000 miles (4–7 years)' }
+    ],
+    colors: [
+      { name: 'Electric Blue', hex: '#1e88ff' },
+      { name: 'Evergreen', hex: '#1d4d3c' },
+      { name: 'Lunar Mist', hex: '#cad6e8' },
+      { name: 'Graphite', hex: '#2d3038' },
+      { name: 'Harbor Blue', hex: '#5d7ea6' }
+    ]
+  }
+]
 
+const getStorageKey = (userId) => `${STORAGE_PREFIX}${userId}`
+
+const parseJwtPayload = (credential) => {
+  if (!credential) return null
+  const payloadPart = credential.split('.')[1]
+  if (!payloadPart) return null
+  try {
+    const normalized = payloadPart.replace(/-/g, '+').replace(/_/g, '/')
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=')
+    const decoded = atob(padded)
+    return JSON.parse(decoded)
+  } catch {
+    return null
+  }
+}
+
+const loadUserData = (userId) => {
+  if (!userId) return null
+  const stored = localStorage.getItem(getStorageKey(userId))
+  if (!stored) return null
+  try {
+    return JSON.parse(stored)
+  } catch {
+    return null
+  }
+}
+
+function App() {
   const [selectedOption, setSelectedOption] = useState(null)
   const [selectedColor, setSelectedColor] = useState(null)
   const [vehicleName, setVehicleName] = useState('')
+  const [partName, setPartName] = useState('')
+  const [partExpiryDate, setPartExpiryDate] = useState('')
+  const [customParts, setCustomParts] = useState([])
+  const [partExpirations, setPartExpirations] = useState({})
+  const [removedParts, setRemovedParts] = useState([])
+  const [isNightMode, setIsNightMode] = useState(false)
+  const [signedInUser, setSignedInUser] = useState(null)
+  const [isGoogleReady, setIsGoogleReady] = useState(false)
+
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_OAUTH_CLIENT_ID') {
+      return
+    }
+
+    const existingScript = document.querySelector('script[data-google-signin]')
+    if (existingScript) {
+      return
+    }
+
+    const script = document.createElement('script')
+    script.src = 'https://accounts.google.com/gsi/client'
+    script.async = true
+    script.defer = true
+    script.dataset.googleSignin = 'true'
+    script.onload = () => {
+      if (!window.google) return
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: (response) => {
+          const payload = parseJwtPayload(response?.credential)
+          if (!payload?.sub) return
+          setSignedInUser({
+            id: payload.sub,
+            name: payload.name || payload.given_name || 'Signed-in user',
+            email: payload.email || ''
+          })
+        }
+      })
+      const buttonRoot = document.getElementById('google-signin-button')
+      if (!buttonRoot) return
+      window.google.accounts.id.renderButton(buttonRoot, {
+        theme: 'outline',
+        size: 'large',
+        shape: 'pill',
+        text: 'continue_with'
+      })
+      setIsGoogleReady(true)
+    }
+    document.body.appendChild(script)
+  }, [GOOGLE_CLIENT_ID])
+
+  useEffect(() => {
+    if (!signedInUser?.id) return
+    const saved = loadUserData(signedInUser.id)
+    if (!saved) return
+
+    const nextOption = saved.selectedOptionLabel
+      ? VEHICLE_OPTIONS.find((option) => option.label === saved.selectedOptionLabel) || null
+      : null
+
+    setSelectedOption(nextOption)
+    setSelectedColor(saved.selectedColor || nextOption?.colors?.[0]?.hex || null)
+    setVehicleName(saved.vehicleName || nextOption?.model || '')
+    setCustomParts(saved.customParts || [])
+    setPartExpirations(saved.partExpirations || {})
+    setRemovedParts(saved.removedParts || [])
+    setIsNightMode(Boolean(saved.isNightMode))
+  }, [signedInUser?.id])
+
+  useEffect(() => {
+    if (!signedInUser?.id) return
+    const payload = {
+      selectedOptionLabel: selectedOption?.label || null,
+      selectedColor: selectedColor || null,
+      vehicleName,
+      customParts,
+      partExpirations,
+      removedParts,
+      isNightMode
+    }
+    localStorage.setItem(getStorageKey(signedInUser.id), JSON.stringify(payload))
+  }, [
+    signedInUser?.id,
+    selectedOption,
+    selectedColor,
+    vehicleName,
+    customParts,
+    partExpirations,
+    removedParts,
+    isNightMode
+  ])
 
   const handleSelect = (option) => {
     setSelectedOption(option)
@@ -102,27 +222,151 @@ function App() {
     setSelectedOption(null)
     setSelectedColor(null)
     setVehicleName('')
+    setPartName('')
+    setPartExpiryDate('')
+    setCustomParts([])
+    setPartExpirations({})
+    setRemovedParts([])
   }
 
+  const handleAddPart = () => {
+    if (!partName.trim() || !partExpiryDate) {
+      return
+    }
+
+    const expiresAt = new Date(partExpiryDate).getTime()
+    if (Number.isNaN(expiresAt)) {
+      return
+    }
+
+    const createdAt = Date.now()
+    const durationMs = Math.max(expiresAt - createdAt, 0)
+    const normalizedName = partName.trim().toLowerCase()
+    const builtInMatch = VEHICLE_OPTIONS
+      .flatMap((option) => option.parts || [])
+      .find((part) => part.name.toLowerCase() === normalizedName)
+
+    if (builtInMatch) {
+      setPartExpirations((prev) => ({
+        ...prev,
+        [builtInMatch.name]: {
+          createdAt,
+          expiresAt,
+          durationMs
+        }
+      }))
+      setPartName('')
+      setPartExpiryDate('')
+      return
+    }
+
+    const newPart = {
+      name: partName.trim(),
+      interval: `Expires on ${partExpiryDate}`,
+      isCustom: true,
+      id: `${partName}-${partExpiryDate}-${Date.now()}`,
+      createdAt,
+      expiresAt,
+      durationMs
+    }
+
+    setCustomParts((prev) => [newPart, ...prev])
+    setPartName('')
+    setPartExpiryDate('')
+  }
+
+  const handleRemovePart = (id) => {
+    setCustomParts((prev) => prev.filter((part) => part.id !== id))
+  }
+
+  const handleRemoveBuiltInPart = (name) => {
+    setRemovedParts((prev) => [...prev, name])
+  }
+
+  const handleResetPart = (id) => {
+    setCustomParts((prev) =>
+      prev.map((part) =>
+        part.id === id
+          ? {
+              ...part,
+              createdAt: Date.now(),
+              durationMs: Math.max(part.expiresAt - Date.now(), 0)
+            }
+          : part
+      )
+    )
+  }
+
+  const handleResetBuiltInPart = (name) => {
+    setPartExpirations((prev) => {
+      const entry = prev[name]
+      if (!entry) {
+        return prev
+      }
+      return {
+        ...prev,
+        [name]: { ...entry, createdAt: Date.now(), durationMs: Math.max(entry.expiresAt - Date.now(), 0) }
+      }
+    })
+  }
+
+  const getProgress = (part) => {
+    if (!part.durationMs || !part.createdAt) {
+      return 0
+    }
+
+    const elapsed = Date.now() - part.createdAt
+    return Math.min(Math.max(elapsed / part.durationMs, 0), 1)
+  }
+
+  const formatDate = (timestamp) =>
+    new Date(timestamp).toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    })
+
   return (
-    <main className="page">
+    <main className={`page ${isNightMode ? 'is-night' : ''}`}>
       <div className="background-glow background-glow--left" />
       <div className="background-glow background-glow--right" />
 
       <section className="hero">
-        <p className="eyebrow">Welcome to your next drive</p>
+        <div className="hero-actions">
+          <div className="auth-panel">
+            <div className={`google-signin-wrap ${isGoogleReady ? 'is-ready' : ''}`}>
+              <span className="google-signin-fallback">Google Sign-In</span>
+              <div id="google-signin-button" className="google-signin-button" />
+            </div>
+            <span className="auth-note">Sign in to save your setup on this device.</span>
+            {signedInUser ? (
+              <span className="auth-user">
+                Signed in as {signedInUser.name}
+                {signedInUser.email ? ` · ${signedInUser.email}` : ''}
+              </span>
+            ) : null}
+          </div>
+          <button
+            className="mode-toggle"
+            type="button"
+            onClick={() => setIsNightMode((prev) => !prev)}
+            aria-pressed={isNightMode}
+          >
+            {isNightMode ? 'Day mode' : 'Night mode'}
+          </button>
+        </div>
+        <p className="eyebrow">Next drive, unlocked</p>
         <h1>
           Choose your
           <span className="highlight"> perfect fit</span>
         </h1>
         <p className="lede">
-          Explore the lineup and start with the category that matches your lifestyle.
-          Each option is crafted with comfort, capability, and style in mind.
+          Pick a category. Tune the vibe. Keep the journey smooth.
         </p>
 
         {!selectedOption ? (
           <div className="options-grid">
-            {options.map((option) => (
+            {VEHICLE_OPTIONS.map((option) => (
               <button
                 key={option.label}
                 className="option-card"
@@ -201,24 +445,137 @@ function App() {
                 </div>
               </div>
 
-              <div className="parts-card">
-                <div className="parts-header">
-                  <h3>Key parts</h3>
-                  <span className="badge subtle">Maintenance</span>
-                </div>
+                <div className="parts-card">
+                  <div className="parts-header">
+                    <h3>Key parts</h3>
+                    <span className="badge subtle">Maintenance</span>
+                  </div>
                 <div className="parts-grid">
-                  {selectedOption.parts && selectedOption.parts.length > 0 ? (
-                    selectedOption.parts.map((part) => (
-                      <div key={part.name} className="part-chip" role="button" tabIndex={0}>
-                        <div className="part-name">{part.name}</div>
-                        <div className="part-interval">{part.interval || 'Mileage coming soon'}</div>
+                  {[...customParts, ...(selectedOption.parts || [])].length > 0 ? (
+                    [...customParts, ...(selectedOption.parts || [])]
+                      .filter((part) => !removedParts.includes(part.name))
+                      .map((part) => {
+                      const expiration = part.isCustom ? part : partExpirations[part.name]
+                      const progress = expiration ? getProgress(expiration) : 0
+                      const remainingMs = expiration ? expiration.durationMs - (Date.now() - expiration.createdAt) : null
+                      const remainingDays =
+                        expiration && remainingMs > 0 ? Math.ceil(remainingMs / (24 * 60 * 60 * 1000)) : 0
+                      const isDue = expiration ? remainingMs <= 0 : false
+                      const isCritical = expiration ? progress >= 0.8 : false
+                      const statusLabel = expiration
+                        ? isDue
+                          ? 'Replace now'
+                          : `${remainingDays} day${remainingDays === 1 ? '' : 's'} left`
+                        : null
+                      const expiryLabel = expiration ? `Expires on ${formatDate(expiration.expiresAt)}` : 'No expiry set'
+
+                      return (
+                      <div key={part.id || part.name} className="part-chip" role="button" tabIndex={0}>
+                        <div className="part-chip-row">
+                          <div className="part-name">{part.name}</div>
+                          <div className="part-actions">
+                            <button
+                              className="part-reset"
+                              type="button"
+                              onClick={
+                                part.isCustom
+                                  ? () => handleResetPart(part.id)
+                                  : () => handleResetBuiltInPart(part.name)
+                              }
+                              aria-label={`Reset ${part.name} timer`}
+                              disabled={!expiration}
+                            >
+                              🔁
+                            </button>
+                            <button
+                              className="part-remove"
+                              type="button"
+                              onClick={
+                                part.isCustom
+                                  ? () => handleRemovePart(part.id)
+                                  : () => handleRemoveBuiltInPart(part.name)
+                              }
+                              aria-label={`Remove ${part.name}`}
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </div>
+                        <div className="part-interval">
+                          {part.interval || 'Mileage coming soon'}
+                          {part.isCustom ? <span className="part-tag">Custom log</span> : null}
+                        </div>
+                        <div className="part-expiry">{expiryLabel}</div>
+                        {expiration ? (
+                          <div className="part-progress" style={{ '--progress': progress }}>
+                            <div className="part-progress-track" aria-hidden>
+                              <div
+                                className={`part-progress-fill${isDue || isCritical ? ' is-critical' : ''}`}
+                                style={{ width: `${progress * 100}%` }}
+                              />
+                              <div className="part-progress-marker" />
+                            </div>
+                            <div className={`part-progress-label ${isDue ? 'is-due' : ''}`}>
+                              {statusLabel}
+                            </div>
+                          </div>
+                        ) : null}
                       </div>
-                    ))
+                      )
+                    })
                   ) : (
                     <div className="part-chip">
                       <div className="part-name">Parts list coming soon</div>
                     </div>
                   )}
+                </div>
+
+                <div className="parts-card maintenance-card">
+                  <div className="parts-header">
+                    <h3>Part age tracker</h3>
+                    <span className="badge subtle">Log</span>
+                  </div>
+                  <p className="card-note">Add the exact expiration date for a precise countdown.</p>
+                  <div className="tracker-grid">
+                    <label className="name-field">
+                      <span>Part name</span>
+                      <input
+                        type="text"
+                        value={partName}
+                        placeholder="e.g., Battery"
+                        onChange={(e) => setPartName(e.target.value)}
+                      />
+                    </label>
+                    <label className="name-field">
+                      <span>Expiration date</span>
+                      <input
+                        type="date"
+                        value={partExpiryDate}
+                        onChange={(e) => setPartExpiryDate(e.target.value)}
+                      />
+                    </label>
+                    <div className="tracker-actions">
+                      <span className="tracker-label">Add to list</span>
+                      <button
+                        className="tracker-button"
+                        type="button"
+                        onClick={handleAddPart}
+                        disabled={!partName.trim() || !partExpiryDate}
+                      >
+                        Add part
+                      </button>
+                    </div>
+                  </div>
+                  <div className="tracker-summary">
+                    <span className="tracker-dot" aria-hidden />
+                    {partName && partExpiryDate ? (
+                      <span>
+                        Tracking {partName} · Expires on {partExpiryDate}
+                      </span>
+                    ) : (
+                      <span>Enter a part and its expiration date to start tracking.</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
