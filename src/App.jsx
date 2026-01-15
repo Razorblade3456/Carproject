@@ -1,9 +1,10 @@
-import { Suspense, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import './App.css'
 
 function App() {
+  const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_OAUTH_CLIENT_ID'
   const options = [
     {
       label: 'Sedan',
@@ -97,6 +98,39 @@ function App() {
   const [partExpirations, setPartExpirations] = useState({})
   const [removedParts, setRemovedParts] = useState([])
   const [isNightMode, setIsNightMode] = useState(false)
+
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === '79775733699-p5q1tdoc7kpa31v0ccnstbs006tsvrb7.apps.googleusercontent.com') {
+      return
+    }
+
+    const existingScript = document.querySelector('script[data-google-signin]')
+    if (existingScript) {
+      return
+    }
+
+    const script = document.createElement('script')
+    script.src = 'https://accounts.google.com/gsi/client'
+    script.async = true
+    script.defer = true
+    script.dataset.googleSignin = 'true'
+    script.onload = () => {
+      if (!window.google) return
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: (response) => {
+          console.log('Google sign-in credential', response)
+        }
+      })
+      window.google.accounts.id.renderButton(document.getElementById('google-signin-button'), {
+        theme: 'outline',
+        size: 'large',
+        shape: 'pill',
+        text: 'continue_with'
+      })
+    }
+    document.body.appendChild(script)
+  }, [GOOGLE_CLIENT_ID])
 
   const handleSelect = (option) => {
     setSelectedOption(option)
@@ -201,6 +235,7 @@ function App() {
       return 0
     }
 
+    // eslint-disable-next-line react-hooks/purity
     const elapsed = Date.now() - part.createdAt
     return Math.min(Math.max(elapsed / part.durationMs, 0), 1)
   }
@@ -219,6 +254,10 @@ function App() {
 
       <section className="hero">
         <div className="hero-actions">
+          <div className="auth-panel">
+            <div id="google-signin-button" className="google-signin-button" />
+            <span className="auth-note">Replace client ID to enable Google Sign-In.</span>
+          </div>
           <button
             className="mode-toggle"
             type="button"
@@ -330,6 +369,7 @@ function App() {
                       .map((part) => {
                       const expiration = part.isCustom ? part : partExpirations[part.name]
                       const progress = expiration ? getProgress(expiration) : 0
+                      // eslint-disable-next-line react-hooks/purity
                       const remainingMs = expiration ? expiration.durationMs - (Date.now() - expiration.createdAt) : null
                       const remainingDays =
                         expiration && remainingMs > 0 ? Math.ceil(remainingMs / (24 * 60 * 60 * 1000)) : 0
