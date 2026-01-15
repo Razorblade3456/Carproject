@@ -4,7 +4,7 @@ import { OrbitControls } from '@react-three/drei'
 import './App.css'
 
 function App() {
-  const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_OAUTH_CLIENT_ID'
+  const GOOGLE_CLIENT_ID = '79775733699-p5q1tdoc7kpa31v0ccnstbs006tsvrb7.apps.googleusercontent.com'
   const options = [
     {
       label: 'Sedan',
