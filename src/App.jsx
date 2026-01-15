@@ -100,7 +100,7 @@ function App() {
   const [isNightMode, setIsNightMode] = useState(false)
 
   useEffect(() => {
-    if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_OAUTH_CLIENT_ID') {
+    if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === '79775733699-p5q1tdoc7kpa31v0ccnstbs006tsvrb7.apps.googleusercontent.com') {
       return
     }
 
@@ -235,6 +235,7 @@ function App() {
       return 0
     }
 
+    // eslint-disable-next-line react-hooks/purity
     const elapsed = Date.now() - part.createdAt
     return Math.min(Math.max(elapsed / part.durationMs, 0), 1)
   }
@@ -368,6 +369,7 @@ function App() {
                       .map((part) => {
                       const expiration = part.isCustom ? part : partExpirations[part.name]
                       const progress = expiration ? getProgress(expiration) : 0
+                      // eslint-disable-next-line react-hooks/purity
                       const remainingMs = expiration ? expiration.durationMs - (Date.now() - expiration.createdAt) : null
                       const remainingDays =
                         expiration && remainingMs > 0 ? Math.ceil(remainingMs / (24 * 60 * 60 * 1000)) : 0
