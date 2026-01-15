@@ -166,7 +166,7 @@ function App() {
       })
     }
     document.body.appendChild(script)
-  }, [])
+  }, [GOOGLE_CLIENT_ID])
 
   useEffect(() => {
     if (!signedInUser?.id) return
