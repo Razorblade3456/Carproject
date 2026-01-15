@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/purity */
 import { Suspense, useEffect, useMemo, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
@@ -165,7 +166,7 @@ function App() {
       })
     }
     document.body.appendChild(script)
-  }, [GOOGLE_CLIENT_ID])
+  }, [])
 
   useEffect(() => {
     if (!signedInUser?.id) return
