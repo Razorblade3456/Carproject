@@ -4,7 +4,7 @@ import { OrbitControls } from '@react-three/drei'
 import './App.css'
 
 function App() {
-  const GOOGLE_CLIENT_ID = '79775733699-p5q1tdoc7kpa31v0ccnstbs006tsvrb7.apps.googleusercontent.com'
+  const GOOGLE_CLIENT_ID = (import.meta.env.VITE_GOOGLE_CLIENT_ID || '').trim()
   const options = [
     {
       label: 'Sedan',
@@ -256,7 +256,12 @@ function App() {
         <div className="hero-actions">
           <div className="auth-panel">
             <div id="google-signin-button" className="google-signin-button" />
-            <span className="auth-note">Replace client ID to enable Google Sign-In.</span>
+            {!GOOGLE_CLIENT_ID ? (
+              <span className="auth-note">
+                Set <strong>VITE_GOOGLE_CLIENT_ID</strong> in your <code>.env</code> to enable Google
+                Sign-In.
+              </span>
+            ) : null}
           </div>
           <button
             className="mode-toggle"
