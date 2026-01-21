@@ -5,12 +5,14 @@ import './App.css'
 
 function App() {
   const GOOGLE_CLIENT_ID = (import.meta.env.VITE_GOOGLE_CLIENT_ID || '').trim()
+  const STORAGE_USER_KEY = 'carproject-google-user'
+  const STORAGE_DATA_PREFIX = 'carproject-user-data-'
   const options = [
     {
       label: 'Sedan',
       model: 'Aurora S3',
-      description: 'Quiet cabin. Sharp handling. Easy city moves.',
-      badge: 'Smooth & Efficient',
+      description: 'Keep daily-driver parts on a clean maintenance cadence.',
+      badge: 'Daily Maintenance',
       icon: '🚗',
       parts: [
         { name: 'Engine Oil', interval: '5,000–7,500 miles (6–9 months)' },
@@ -35,8 +37,8 @@ function App() {
     {
       label: 'Truck',
       model: 'RidgeLine X',
-      description: 'Built for payloads and weekend missions.',
-      badge: 'Strength & Utility',
+      description: 'Stay ahead of heavy-duty wear and replacement dates.',
+      badge: 'Workhorse Care',
       icon: '🛻',
       parts: [
         { name: 'Engine Oil', interval: '5,000–7,500 miles (6–9 months)' },
@@ -63,8 +65,8 @@ function App() {
     {
       label: 'SUV',
       model: 'Atlas E7',
-      description: 'Spacious, calm, and ready for any weather.',
-      badge: 'Comfort & Control',
+      description: 'Track family-ready parts and service timelines.',
+      badge: 'All-Weather Ready',
       icon: '🚙',
       parts: [
         { name: 'Engine Oil', interval: '5,000–7,500 miles (6–9 months)' },
@@ -98,6 +100,37 @@ function App() {
   const [partExpirations, setPartExpirations] = useState({})
   const [removedParts, setRemovedParts] = useState([])
   const [isNightMode, setIsNightMode] = useState(false)
+  const [googleUser, setGoogleUser] = useState(null)
+  const [hasLoadedStoredData, setHasLoadedStoredData] = useState(false)
+  const [editingPart, setEditingPart] = useState(null)
+  const [editName, setEditName] = useState('')
+  const [editDate, setEditDate] = useState('')
+
+  const getUserStorageKey = (user) => {
+    if (!user) return null
+    return `${STORAGE_DATA_PREFIX}${user.sub || user.email || 'default'}`
+  }
+
+  const parseGoogleCredential = (credential) => {
+    if (!credential) return null
+    const parts = credential.split('.')
+    if (parts.length < 2) return null
+    const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+    const padded = payload.padEnd(payload.length + ((4 - (payload.length % 4)) % 4), '=')
+    try {
+      return JSON.parse(atob(padded))
+    } catch (error) {
+      console.error('Unable to parse Google credential.', error)
+      return null
+    }
+  }
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem(STORAGE_USER_KEY)
+    if (storedUser) {
+      setGoogleUser(JSON.parse(storedUser))
+    }
+  }, [STORAGE_USER_KEY])
 
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_OAUTH_CLIENT_ID') {
@@ -119,18 +152,101 @@ function App() {
       window.google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: (response) => {
-          console.log('Google sign-in credential', response)
+          const profile = parseGoogleCredential(response.credential)
+          if (profile) {
+            const user = {
+              name: profile.name,
+              email: profile.email,
+              picture: profile.picture,
+              sub: profile.sub
+            }
+            localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(user))
+            setGoogleUser(user)
+            setHasLoadedStoredData(false)
+          }
         }
       })
-      window.google.accounts.id.renderButton(document.getElementById('google-signin-button'), {
-        theme: 'outline',
-        size: 'large',
-        shape: 'pill',
-        text: 'continue_with'
-      })
+      const buttonElement = document.getElementById('google-signin-button')
+      if (buttonElement) {
+        window.google.accounts.id.renderButton(buttonElement, {
+          theme: 'outline',
+          size: 'large',
+          shape: 'pill',
+          text: 'continue_with'
+        })
+      }
     }
     document.body.appendChild(script)
-  }, [GOOGLE_CLIENT_ID])
+  }, [GOOGLE_CLIENT_ID, STORAGE_USER_KEY])
+
+  useEffect(() => {
+    if (!googleUser || hasLoadedStoredData) {
+      return
+    }
+
+    const storageKey = getUserStorageKey(googleUser)
+    if (!storageKey) return
+    const storedData = localStorage.getItem(storageKey)
+    if (storedData) {
+      const parsed = JSON.parse(storedData)
+      if (parsed.selectedOptionLabel) {
+        const matched = options.find((option) => option.label === parsed.selectedOptionLabel)
+        setSelectedOption(matched || null)
+        setSelectedColor(parsed.selectedColor || matched?.colors?.[0]?.hex || null)
+      } else {
+        setSelectedOption(null)
+        setSelectedColor(null)
+      }
+      setVehicleName(parsed.vehicleName || '')
+      setCustomParts(parsed.customParts || [])
+      setPartExpirations(parsed.partExpirations || {})
+      setRemovedParts(parsed.removedParts || [])
+    } else {
+      const payload = {
+        selectedOptionLabel: selectedOption?.label || null,
+        selectedColor,
+        vehicleName,
+        customParts,
+        partExpirations,
+        removedParts
+      }
+      localStorage.setItem(storageKey, JSON.stringify(payload))
+    }
+    setHasLoadedStoredData(true)
+  }, [
+    googleUser,
+    hasLoadedStoredData,
+    options,
+    selectedOption,
+    selectedColor,
+    vehicleName,
+    customParts,
+    partExpirations,
+    removedParts
+  ])
+
+  useEffect(() => {
+    if (!googleUser) return
+    const storageKey = getUserStorageKey(googleUser)
+    if (!storageKey) return
+    const payload = {
+      selectedOptionLabel: selectedOption?.label || null,
+      selectedColor,
+      vehicleName,
+      customParts,
+      partExpirations,
+      removedParts
+    }
+    localStorage.setItem(storageKey, JSON.stringify(payload))
+  }, [
+    googleUser,
+    selectedOption,
+    selectedColor,
+    vehicleName,
+    customParts,
+    partExpirations,
+    removedParts
+  ])
 
   const handleSelect = (option) => {
     setSelectedOption(option)
@@ -247,6 +363,61 @@ function App() {
       year: 'numeric'
     })
 
+  const formatDateInput = (timestamp) => {
+    if (!timestamp) return ''
+    const date = new Date(timestamp)
+    if (Number.isNaN(date.getTime())) return ''
+    return date.toISOString().slice(0, 10)
+  }
+
+  const startEditingPart = (part, isCustom) => {
+    setEditingPart({ type: isCustom ? 'custom' : 'built-in', key: isCustom ? part.id : part.name })
+    setEditName(part.name || '')
+    setEditDate(formatDateInput(part.expiresAt || partExpirations[part.name]?.expiresAt))
+  }
+
+  const cancelEditing = () => {
+    setEditingPart(null)
+    setEditName('')
+    setEditDate('')
+  }
+
+  const saveEditedPart = () => {
+    if (!editingPart || !editDate) return
+    const expiresAt = new Date(editDate).getTime()
+    if (Number.isNaN(expiresAt)) return
+    const createdAt = Date.now()
+    const durationMs = Math.max(expiresAt - createdAt, 0)
+
+    if (editingPart.type === 'custom') {
+      setCustomParts((prev) =>
+        prev.map((part) =>
+          part.id === editingPart.key
+            ? {
+                ...part,
+                name: editName.trim() || part.name,
+                interval: `Expires on ${editDate}`,
+                createdAt,
+                expiresAt,
+                durationMs
+              }
+            : part
+        )
+      )
+    } else {
+      setPartExpirations((prev) => ({
+        ...prev,
+        [editingPart.key]: {
+          createdAt,
+          expiresAt,
+          durationMs
+        }
+      }))
+    }
+
+    cancelEditing()
+  }
+
   return (
     <main className={`page ${isNightMode ? 'is-night' : ''}`}>
       <div className="background-glow background-glow--left" />
@@ -255,7 +426,26 @@ function App() {
       <section className="hero">
         <div className="hero-actions">
           <div className="auth-panel">
-            <div id="google-signin-button" className="google-signin-button" />
+            {!googleUser ? <div id="google-signin-button" className="google-signin-button" /> : null}
+            {googleUser ? (
+              <div className="google-signed-in" role="status">
+                {googleUser.picture ? (
+                  <img
+                    className="google-avatar"
+                    src={googleUser.picture}
+                    alt={`${googleUser.name || 'Google user'} avatar`}
+                  />
+                ) : (
+                  <span className="google-avatar google-avatar--fallback" aria-hidden>
+                    G
+                  </span>
+                )}
+                <div>
+                  <span className="google-status">Signed in with Google</span>
+                  <span className="google-name">{googleUser.name || googleUser.email}</span>
+                </div>
+              </div>
+            ) : null}
             {!GOOGLE_CLIENT_ID ? (
               <span className="auth-note">
                 Set <strong>VITE_GOOGLE_CLIENT_ID</strong> in your <code>.env</code> to enable Google
@@ -272,13 +462,13 @@ function App() {
             {isNightMode ? 'Day mode' : 'Night mode'}
           </button>
         </div>
-        <p className="eyebrow">Next drive, unlocked</p>
+        <p className="eyebrow">Maintenance dashboard</p>
         <h1>
-          Choose your
-          <span className="highlight"> perfect fit</span>
+          Track every
+          <span className="highlight"> car part</span>
         </h1>
         <p className="lede">
-          Pick a category. Tune the vibe. Keep the journey smooth.
+          Log expiration dates and stay on top of replacements.
         </p>
 
         {!selectedOption ? (
@@ -311,7 +501,7 @@ function App() {
             <div className="model-panel">
               <div className="model-glow" />
               <div className="model-meta">
-                <div className="pill">Selected · {selectedOption.label}</div>
+                <div className="pill">Tracking · {selectedOption.label}</div>
                 <h2 className="model-name">{vehicleName || selectedOption.model}</h2>
                 <p className="model-description">{selectedOption.description}</p>
               </div>
@@ -335,7 +525,7 @@ function App() {
               </div>
 
               <label className="name-field">
-                <span>Name your vehicle</span>
+                <span>Label your vehicle</span>
                 <input
                   type="text"
                   value={vehicleName}
@@ -345,7 +535,7 @@ function App() {
               </label>
 
               <div className="palette">
-                <span className="palette-label">Choose a color</span>
+                <span className="palette-label">Pick a paint color</span>
                 <div className="swatches">
                   {selectedOption.colors.map((color) => (
                     <button
@@ -364,8 +554,8 @@ function App() {
 
                 <div className="parts-card">
                   <div className="parts-header">
-                    <h3>Key parts</h3>
-                    <span className="badge subtle">Maintenance</span>
+                    <h3>Parts list</h3>
+                    <span className="badge subtle">Schedule</span>
                   </div>
                 <div className="parts-grid">
                   {[...customParts, ...(selectedOption.parts || [])].length > 0 ? (
@@ -373,6 +563,9 @@ function App() {
                       .filter((part) => !removedParts.includes(part.name))
                       .map((part) => {
                       const expiration = part.isCustom ? part : partExpirations[part.name]
+                      const isEditing =
+                        editingPart?.type === (part.isCustom ? 'custom' : 'built-in') &&
+                        editingPart?.key === (part.isCustom ? part.id : part.name)
                       const progress = expiration ? getProgress(expiration) : 0
                       // eslint-disable-next-line react-hooks/purity
                       const remainingMs = expiration ? expiration.durationMs - (Date.now() - expiration.createdAt) : null
@@ -388,15 +581,23 @@ function App() {
                       const expiryLabel = expiration ? `Expires on ${formatDate(expiration.expiresAt)}` : 'No expiry set'
 
                       return (
-                      <div key={part.id || part.name} className="part-chip" role="button" tabIndex={0}>
-                        <div className="part-chip-row">
-                          <div className="part-name">{part.name}</div>
-                          <div className="part-actions">
-                            <button
-                              className="part-reset"
-                              type="button"
-                              onClick={
-                                part.isCustom
+                        <div key={part.id || part.name} className="part-chip" role="button" tabIndex={0}>
+                          <div className="part-chip-row">
+                            <div className="part-name">{part.name}</div>
+                            <div className="part-actions">
+                              <button
+                                className="part-edit"
+                                type="button"
+                                onClick={() => startEditingPart(part, part.isCustom)}
+                                aria-label={`Edit ${part.name}`}
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                className="part-reset"
+                                type="button"
+                                onClick={
+                                  part.isCustom
                                   ? () => handleResetPart(part.id)
                                   : () => handleResetBuiltInPart(part.name)
                               }
@@ -419,6 +620,42 @@ function App() {
                             </button>
                           </div>
                         </div>
+                        {isEditing ? (
+                          <div className="part-edit-fields">
+                            <label className="part-edit-field">
+                              <span>Name</span>
+                              <input
+                                className="part-edit-input"
+                                type="text"
+                                value={editName}
+                                onChange={(event) => setEditName(event.target.value)}
+                                disabled={!part.isCustom}
+                              />
+                            </label>
+                            <label className="part-edit-field">
+                              <span>Expiration date</span>
+                              <input
+                                className="part-edit-input"
+                                type="date"
+                                value={editDate}
+                                onChange={(event) => setEditDate(event.target.value)}
+                              />
+                            </label>
+                            <div className="part-edit-actions">
+                              <button
+                                className="part-edit-save"
+                                type="button"
+                                onClick={saveEditedPart}
+                                disabled={!editDate}
+                              >
+                                Save
+                              </button>
+                              <button className="part-edit-cancel" type="button" onClick={cancelEditing}>
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : null}
                         <div className="part-interval">
                           {part.interval || 'Mileage coming soon'}
                           {part.isCustom ? <span className="part-tag">Custom log</span> : null}
@@ -450,10 +687,10 @@ function App() {
 
                 <div className="parts-card maintenance-card">
                   <div className="parts-header">
-                    <h3>Part age tracker</h3>
-                    <span className="badge subtle">Log</span>
+                    <h3>Add a part</h3>
+                    <span className="badge subtle">Tracker</span>
                   </div>
-                  <p className="card-note">Add the exact expiration date for a precise countdown.</p>
+                  <p className="card-note">Log expiration dates to keep reminders accurate.</p>
                   <div className="tracker-grid">
                     <label className="name-field">
                       <span>Part name</span>
@@ -473,7 +710,7 @@ function App() {
                       />
                     </label>
                     <div className="tracker-actions">
-                      <span className="tracker-label">Add to list</span>
+                      <span className="tracker-label">Add to tracker</span>
                       <button
                         className="tracker-button"
                         type="button"
@@ -488,10 +725,10 @@ function App() {
                     <span className="tracker-dot" aria-hidden />
                     {partName && partExpiryDate ? (
                       <span>
-                        Tracking {partName} · Expires on {partExpiryDate}
+                        Tracking {partName} · Expires {partExpiryDate}
                       </span>
                     ) : (
-                      <span>Enter a part and its expiration date to start tracking.</span>
+                      <span>Enter a part and expiration date to start tracking.</span>
                     )}
                   </div>
                 </div>
@@ -500,9 +737,9 @@ function App() {
 
             <div className="footnote">
               <span className="dot" aria-hidden />
-              Start customizing your {selectedOption.label.toLowerCase()} or{' '}
+              Review parts for your {selectedOption.label.toLowerCase()} or{' '}
               <button className="link-button" type="button" onClick={handleReset}>
-                choose a different category
+                choose a different vehicle
               </button>
               .
             </div>
