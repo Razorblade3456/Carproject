@@ -3,8 +3,31 @@ import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import './App.css'
 
+const parseJwt = (token) => {
+  if (!token) return null
+  const parts = token.split('.')
+  if (parts.length < 2) return null
+  try {
+    return JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')))
+  } catch (error) {
+    console.warn('Unable to decode Google credential.', error)
+    return null
+  }
+}
+
+const getStoredUser = () => {
+  try {
+    const stored = localStorage.getItem('googleUser')
+    return stored ? JSON.parse(stored) : null
+  } catch (error) {
+    console.warn('Unable to read stored Google user.', error)
+    return null
+  }
+}
+
 function App() {
-  const GOOGLE_CLIENT_ID = '79775733699-p5q1tdoc7kpa31v0ccnstbs006tsvrb7.apps.googleusercontent.com'
+  const GOOGLE_CLIENT_ID = (import.meta.env.VITE_GOOGLE_CLIENT_ID || '').trim()
+  const [googleUser, setGoogleUser] = useState(() => getStoredUser())
   const options = [
     {
       label: 'Sedan',
@@ -98,6 +121,53 @@ function App() {
   const [partExpirations, setPartExpirations] = useState({})
   const [removedParts, setRemovedParts] = useState([])
   const [isNightMode, setIsNightMode] = useState(false)
+  const storageKey = useMemo(() => (googleUser?.sub ? `carproject:user:${googleUser.sub}` : null), [googleUser])
+
+  useEffect(() => {
+    if (!storageKey) return
+    const stored = localStorage.getItem(storageKey)
+    if (!stored) return
+    const saved = JSON.parse(stored)
+    const selected = options.find((option) => option.label === saved.selectedLabel)
+    if (selected) {
+      setSelectedOption(selected)
+      setSelectedColor(saved.selectedColor || selected.colors[0].hex)
+      setVehicleName(saved.vehicleName || selected.model)
+    }
+    setPartName(saved.partName || '')
+    setPartExpiryDate(saved.partExpiryDate || '')
+    setCustomParts(saved.customParts || [])
+    setPartExpirations(saved.partExpirations || {})
+    setRemovedParts(saved.removedParts || [])
+    setIsNightMode(Boolean(saved.isNightMode))
+  }, [storageKey, options])
+
+  useEffect(() => {
+    if (!storageKey) return
+    const payload = {
+      selectedLabel: selectedOption?.label ?? null,
+      selectedColor,
+      vehicleName,
+      partName,
+      partExpiryDate,
+      customParts,
+      partExpirations,
+      removedParts,
+      isNightMode
+    }
+    localStorage.setItem(storageKey, JSON.stringify(payload))
+  }, [
+    storageKey,
+    selectedOption,
+    selectedColor,
+    vehicleName,
+    partName,
+    partExpiryDate,
+    customParts,
+    partExpirations,
+    removedParts,
+    isNightMode
+  ])
 
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_OAUTH_CLIENT_ID') {
@@ -119,7 +189,16 @@ function App() {
       window.google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: (response) => {
-          console.log('Google sign-in credential', response)
+          const profile = parseJwt(response.credential)
+          if (!profile) return
+          const payload = {
+            sub: profile.sub,
+            name: profile.name,
+            email: profile.email,
+            picture: profile.picture
+          }
+          localStorage.setItem('googleUser', JSON.stringify(payload))
+          setGoogleUser(payload)
         }
       })
       window.google.accounts.id.renderButton(document.getElementById('google-signin-button'), {
@@ -256,7 +335,17 @@ function App() {
         <div className="hero-actions">
           <div className="auth-panel">
             <div id="google-signin-button" className="google-signin-button" />
-            <span className="auth-note">Replace client ID to enable Google Sign-In.</span>
+            {!GOOGLE_CLIENT_ID ? (
+              <span className="auth-note">
+                Set <strong>VITE_GOOGLE_CLIENT_ID</strong> in your <code>.env</code> to enable Google
+                Sign-In.
+              </span>
+            ) : null}
+            {googleUser ? (
+              <span className="auth-note">
+                Signed in as {googleUser.name || googleUser.email}
+              </span>
+            ) : null}
           </div>
           <button
             className="mode-toggle"
