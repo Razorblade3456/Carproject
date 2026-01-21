@@ -34,6 +34,47 @@
   gap: 0.3rem;
 }
 
+.google-signed-in {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 12px 24px rgba(31, 42, 53, 0.12);
+}
+
+.google-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+}
+
+.google-avatar--fallback {
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.85);
+  color: #3a4a55;
+  font-weight: 700;
+}
+
+.google-status {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #4f606b;
+}
+
+.google-name {
+  display: block;
+  font-weight: 600;
+  color: #2a3742;
+}
+
 .google-signin-button {
   min-width: 220px;
   min-height: 44px;
@@ -193,6 +234,29 @@
 .page.is-night .google-signin-button {
   background: rgba(12, 17, 25, 0.75);
   border-color: rgba(130, 160, 255, 0.4);
+}
+
+.page.is-night .google-signed-in {
+  background: rgba(12, 17, 25, 0.75);
+  border-color: rgba(130, 160, 255, 0.4);
+  box-shadow: 0 16px 28px rgba(3, 6, 12, 0.35);
+}
+
+.page.is-night .google-avatar {
+  border-color: rgba(130, 160, 255, 0.5);
+}
+
+.page.is-night .google-avatar--fallback {
+  background: rgba(130, 160, 255, 0.2);
+  color: #d6e2ff;
+}
+
+.page.is-night .google-status {
+  color: #9fb5ff;
+}
+
+.page.is-night .google-name {
+  color: #eef4ff;
 }
 
 .page.is-night .auth-note {

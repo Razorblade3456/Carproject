@@ -5,6 +5,8 @@ import './App.css'
 
 function App() {
   const GOOGLE_CLIENT_ID = (import.meta.env.VITE_GOOGLE_CLIENT_ID || '').trim()
+  const STORAGE_USER_KEY = 'carproject-google-user'
+  const STORAGE_DATA_PREFIX = 'carproject-user-data-'
   const options = [
     {
       label: 'Sedan',
@@ -98,6 +100,34 @@ function App() {
   const [partExpirations, setPartExpirations] = useState({})
   const [removedParts, setRemovedParts] = useState([])
   const [isNightMode, setIsNightMode] = useState(false)
+  const [googleUser, setGoogleUser] = useState(null)
+  const [hasLoadedStoredData, setHasLoadedStoredData] = useState(false)
+
+  const getUserStorageKey = (user) => {
+    if (!user) return null
+    return `${STORAGE_DATA_PREFIX}${user.sub || user.email || 'default'}`
+  }
+
+  const parseGoogleCredential = (credential) => {
+    if (!credential) return null
+    const parts = credential.split('.')
+    if (parts.length < 2) return null
+    const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+    const padded = payload.padEnd(payload.length + ((4 - (payload.length % 4)) % 4), '=')
+    try {
+      return JSON.parse(atob(padded))
+    } catch (error) {
+      console.error('Unable to parse Google credential.', error)
+      return null
+    }
+  }
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem(STORAGE_USER_KEY)
+    if (storedUser) {
+      setGoogleUser(JSON.parse(storedUser))
+    }
+  }, [STORAGE_USER_KEY])
 
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_OAUTH_CLIENT_ID') {
@@ -119,18 +149,101 @@ function App() {
       window.google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: (response) => {
-          console.log('Google sign-in credential', response)
+          const profile = parseGoogleCredential(response.credential)
+          if (profile) {
+            const user = {
+              name: profile.name,
+              email: profile.email,
+              picture: profile.picture,
+              sub: profile.sub
+            }
+            localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(user))
+            setGoogleUser(user)
+            setHasLoadedStoredData(false)
+          }
         }
       })
-      window.google.accounts.id.renderButton(document.getElementById('google-signin-button'), {
-        theme: 'outline',
-        size: 'large',
-        shape: 'pill',
-        text: 'continue_with'
-      })
+      const buttonElement = document.getElementById('google-signin-button')
+      if (buttonElement) {
+        window.google.accounts.id.renderButton(buttonElement, {
+          theme: 'outline',
+          size: 'large',
+          shape: 'pill',
+          text: 'continue_with'
+        })
+      }
     }
     document.body.appendChild(script)
-  }, [GOOGLE_CLIENT_ID])
+  }, [GOOGLE_CLIENT_ID, STORAGE_USER_KEY])
+
+  useEffect(() => {
+    if (!googleUser || hasLoadedStoredData) {
+      return
+    }
+
+    const storageKey = getUserStorageKey(googleUser)
+    if (!storageKey) return
+    const storedData = localStorage.getItem(storageKey)
+    if (storedData) {
+      const parsed = JSON.parse(storedData)
+      if (parsed.selectedOptionLabel) {
+        const matched = options.find((option) => option.label === parsed.selectedOptionLabel)
+        setSelectedOption(matched || null)
+        setSelectedColor(parsed.selectedColor || matched?.colors?.[0]?.hex || null)
+      } else {
+        setSelectedOption(null)
+        setSelectedColor(null)
+      }
+      setVehicleName(parsed.vehicleName || '')
+      setCustomParts(parsed.customParts || [])
+      setPartExpirations(parsed.partExpirations || {})
+      setRemovedParts(parsed.removedParts || [])
+    } else {
+      const payload = {
+        selectedOptionLabel: selectedOption?.label || null,
+        selectedColor,
+        vehicleName,
+        customParts,
+        partExpirations,
+        removedParts
+      }
+      localStorage.setItem(storageKey, JSON.stringify(payload))
+    }
+    setHasLoadedStoredData(true)
+  }, [
+    googleUser,
+    hasLoadedStoredData,
+    options,
+    selectedOption,
+    selectedColor,
+    vehicleName,
+    customParts,
+    partExpirations,
+    removedParts
+  ])
+
+  useEffect(() => {
+    if (!googleUser) return
+    const storageKey = getUserStorageKey(googleUser)
+    if (!storageKey) return
+    const payload = {
+      selectedOptionLabel: selectedOption?.label || null,
+      selectedColor,
+      vehicleName,
+      customParts,
+      partExpirations,
+      removedParts
+    }
+    localStorage.setItem(storageKey, JSON.stringify(payload))
+  }, [
+    googleUser,
+    selectedOption,
+    selectedColor,
+    vehicleName,
+    customParts,
+    partExpirations,
+    removedParts
+  ])
 
   const handleSelect = (option) => {
     setSelectedOption(option)
@@ -255,7 +368,26 @@ function App() {
       <section className="hero">
         <div className="hero-actions">
           <div className="auth-panel">
-            <div id="google-signin-button" className="google-signin-button" />
+            {!googleUser ? <div id="google-signin-button" className="google-signin-button" /> : null}
+            {googleUser ? (
+              <div className="google-signed-in" role="status">
+                {googleUser.picture ? (
+                  <img
+                    className="google-avatar"
+                    src={googleUser.picture}
+                    alt={`${googleUser.name || 'Google user'} avatar`}
+                  />
+                ) : (
+                  <span className="google-avatar google-avatar--fallback" aria-hidden>
+                    G
+                  </span>
+                )}
+                <div>
+                  <span className="google-status">Signed in with Google</span>
+                  <span className="google-name">{googleUser.name || googleUser.email}</span>
+                </div>
+              </div>
+            ) : null}
             {!GOOGLE_CLIENT_ID ? (
               <span className="auth-note">
                 Set <strong>VITE_GOOGLE_CLIENT_ID</strong> in your <code>.env</code> to enable Google
