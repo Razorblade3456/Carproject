@@ -5,12 +5,14 @@ import './App.css'
 
 function App() {
   const GOOGLE_CLIENT_ID = (import.meta.env.VITE_GOOGLE_CLIENT_ID || '').trim()
+  const STORAGE_USER_KEY = 'carproject-google-user'
+  const STORAGE_DATA_PREFIX = 'carproject-user-data-'
   const options = [
     {
       label: 'Sedan',
       model: 'Aurora S3',
-      description: 'Quiet cabin. Sharp handling. Easy city moves.',
-      badge: 'Smooth & Efficient',
+      description: 'Keep daily-driver parts on a clean maintenance cadence.',
+      badge: 'Daily Maintenance',
       icon: '🚗',
       parts: [
         { name: 'Engine Oil', interval: '5,000–7,500 miles (6–9 months)' },
@@ -29,75 +31,70 @@ function App() {
         { name: 'Midnight', hex: '#0f172a' },
         { name: 'Glacier', hex: '#dfe7f5' },
         { name: 'Cinder', hex: '#2f343d' },
-        { name: 'Solar Flare', hex: '#ff8d5c' }
-      ]
-    },
-    {
-      label: 'Truck',
-      model: 'RidgeLine X',
-      description: 'Built for payloads and weekend missions.',
-      badge: 'Strength & Utility',
-      icon: '🛻',
-      parts: [
-        { name: 'Engine Oil', interval: '5,000–7,500 miles (6–9 months)' },
-        { name: 'Oil Filter', interval: '5,000–7,500 miles (6–9 months)' },
-        { name: 'Brake Pads', interval: '25,000–50,000 miles (2–4 years)' },
-        { name: 'Brake Rotors', interval: '50,000–80,000 miles (3–5 years)' },
-        { name: 'Tires', interval: '30,000–50,000 miles (2–4 years)' },
-        { name: 'Battery', interval: '3–5 years' },
-        { name: 'Engine Air Filter', interval: '10,000–20,000 miles (1–2 years)' },
-        { name: 'Cabin Air Filter', interval: '15,000–30,000 miles (1–2 years)' },
-        { name: 'Spark Plugs', interval: '60,000–100,000 miles (4–7 years)' },
-        { name: 'Transmission Fluid', interval: '40,000–80,000 miles (3–5 years)' },
-        { name: 'Differential Fluid', interval: '30,000–60,000 miles (2–4 years)' },
-        { name: 'Suspension Components', interval: '50,000–100,000 miles (3–7 years)' }
-      ],
-      colors: [
-        { name: 'Electric Blue', hex: '#1e88ff' },
-        { name: 'Canyon Red', hex: '#a02828' },
-        { name: 'Summit White', hex: '#f7f8fb' },
-        { name: 'Ironclad', hex: '#373a42' },
-        { name: 'Desert Tan', hex: '#c0a074' }
-      ]
-    },
-    {
-      label: 'SUV',
-      model: 'Atlas E7',
-      description: 'Spacious, calm, and ready for any weather.',
-      badge: 'Comfort & Control',
-      icon: '🚙',
-      parts: [
-        { name: 'Engine Oil', interval: '5,000–7,500 miles (6–9 months)' },
-        { name: 'Oil Filter', interval: '5,000–7,500 miles (6–9 months)' },
-        { name: 'Brake Pads', interval: '30,000–60,000 miles (2–4 years)' },
-        { name: 'Brake Rotors', interval: '60,000–90,000 miles (4–6 years)' },
-        { name: 'Tires', interval: '35,000–55,000 miles (3–4 years)' },
-        { name: 'Battery', interval: '3–5 years' },
-        { name: 'Engine Air Filter', interval: '12,000–20,000 miles (1–2 years)' },
-        { name: 'Cabin Air Filter', interval: '15,000–30,000 miles (1–2 years)' },
-        { name: 'Spark Plugs', interval: '60,000–100,000 miles (4–7 years)' },
-        { name: 'Transmission Fluid', interval: '50,000–90,000 miles (4–6 years)' },
-        { name: 'Suspension (shocks/struts)', interval: '60,000–100,000 miles (4–7 years)' }
-      ],
-      colors: [
-        { name: 'Electric Blue', hex: '#1e88ff' },
-        { name: 'Evergreen', hex: '#1d4d3c' },
-        { name: 'Lunar Mist', hex: '#cad6e8' },
-        { name: 'Graphite', hex: '#2d3038' },
-        { name: 'Harbor Blue', hex: '#5d7ea6' }
+        { name: 'Solar Flare', hex: '#ff8d5c' },
+        { name: 'Sunrise Gold', hex: '#f4b63a' },
+        { name: 'Deep Plum', hex: '#5b3b6b' },
+        { name: 'Pearl White', hex: '#f9fafc' }
       ]
     }
   ]
 
-  const [selectedOption, setSelectedOption] = useState(null)
-  const [selectedColor, setSelectedColor] = useState(null)
-  const [vehicleName, setVehicleName] = useState('')
   const [partName, setPartName] = useState('')
   const [partExpiryDate, setPartExpiryDate] = useState('')
-  const [customParts, setCustomParts] = useState([])
-  const [partExpirations, setPartExpirations] = useState({})
-  const [removedParts, setRemovedParts] = useState([])
   const [isNightMode, setIsNightMode] = useState(false)
+  const [googleUser, setGoogleUser] = useState(null)
+  const [hasLoadedStoredData, setHasLoadedStoredData] = useState(false)
+  const [editingPart, setEditingPart] = useState(null)
+  const [editName, setEditName] = useState('')
+  const [editDate, setEditDate] = useState('')
+  const buildVehicleFromOption = (option, vehicleCount) => ({
+    id: `${option.label.toLowerCase()}-${Date.now()}-${vehicleCount}`,
+    optionLabel: option.label,
+    selectedColor: option.colors[0].hex,
+    vehicleName: `${option.model} ${vehicleCount + 1}`,
+    customParts: [],
+    partExpirations: {},
+    removedParts: []
+  })
+
+  const [vehicles, setVehicles] = useState(() => [buildVehicleFromOption(options[0], 0)])
+  const [activeVehicleId, setActiveVehicleId] = useState(vehicles[0]?.id)
+
+  const currentVehicle = vehicles.find((vehicle) => vehicle.id === activeVehicleId) || vehicles[0]
+  const currentOption = options[0]
+
+  const updateCurrentVehicle = (updater) => {
+    if (!currentVehicle) return
+    setVehicles((prev) =>
+      prev.map((vehicle) => (vehicle.id === currentVehicle.id ? updater(vehicle) : vehicle))
+    )
+  }
+
+  const getUserStorageKey = (user) => {
+    if (!user) return null
+    return `${STORAGE_DATA_PREFIX}${user.sub || user.email || 'default'}`
+  }
+
+  const parseGoogleCredential = (credential) => {
+    if (!credential) return null
+    const parts = credential.split('.')
+    if (parts.length < 2) return null
+    const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+    const padded = payload.padEnd(payload.length + ((4 - (payload.length % 4)) % 4), '=')
+    try {
+      return JSON.parse(atob(padded))
+    } catch (error) {
+      console.error('Unable to parse Google credential.', error)
+      return null
+    }
+  }
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem(STORAGE_USER_KEY)
+    if (storedUser) {
+      setGoogleUser(JSON.parse(storedUser))
+    }
+  }, [STORAGE_USER_KEY])
 
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_OAUTH_CLIENT_ID') {
@@ -119,34 +116,98 @@ function App() {
       window.google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: (response) => {
-          console.log('Google sign-in credential', response)
+          const profile = parseGoogleCredential(response.credential)
+          if (profile) {
+            const user = {
+              name: profile.name,
+              email: profile.email,
+              picture: profile.picture,
+              sub: profile.sub
+            }
+            localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(user))
+            setGoogleUser(user)
+            setHasLoadedStoredData(false)
+          }
         }
       })
-      window.google.accounts.id.renderButton(document.getElementById('google-signin-button'), {
-        theme: 'outline',
-        size: 'large',
-        shape: 'pill',
-        text: 'continue_with'
-      })
+      const buttonElement = document.getElementById('google-signin-button')
+      if (buttonElement) {
+        window.google.accounts.id.renderButton(buttonElement, {
+          theme: 'outline',
+          size: 'large',
+          shape: 'pill',
+          text: 'continue_with'
+        })
+      }
     }
     document.body.appendChild(script)
-  }, [GOOGLE_CLIENT_ID])
+  }, [GOOGLE_CLIENT_ID, STORAGE_USER_KEY])
 
-  const handleSelect = (option) => {
-    setSelectedOption(option)
-    setSelectedColor(option.colors[0].hex)
-    setVehicleName(option.model)
-  }
+  useEffect(() => {
+    if (!googleUser || hasLoadedStoredData) {
+      return
+    }
 
-  const handleReset = () => {
-    setSelectedOption(null)
-    setSelectedColor(null)
-    setVehicleName('')
+    const storageKey = getUserStorageKey(googleUser)
+    if (!storageKey) return
+    const storedData = localStorage.getItem(storageKey)
+    if (storedData) {
+      const parsed = JSON.parse(storedData)
+      if (parsed.vehicles?.length) {
+        setVehicles(parsed.vehicles)
+        setActiveVehicleId(parsed.activeVehicleId || parsed.vehicles[0]?.id)
+      }
+    } else {
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({ vehicles, activeVehicleId })
+      )
+    }
+    setHasLoadedStoredData(true)
+  }, [
+    googleUser,
+    hasLoadedStoredData,
+    options,
+    vehicles,
+    activeVehicleId
+  ])
+
+  useEffect(() => {
+    if (!googleUser) return
+    const storageKey = getUserStorageKey(googleUser)
+    if (!storageKey) return
+    localStorage.setItem(storageKey, JSON.stringify({ vehicles, activeVehicleId }))
+  }, [
+    googleUser,
+    vehicles,
+    activeVehicleId
+  ])
+
+  const handleAddVehicle = () => {
+    setVehicles((prev) => {
+      const newVehicle = buildVehicleFromOption(options[0], prev.length)
+      setActiveVehicleId(newVehicle.id)
+      return [...prev, newVehicle]
+    })
     setPartName('')
     setPartExpiryDate('')
-    setCustomParts([])
-    setPartExpirations({})
-    setRemovedParts([])
+    setEditingPart(null)
+  }
+
+  const handleRemoveVehicle = (id) => {
+    setVehicles((prev) => {
+      if (prev.length <= 1) {
+        return prev
+      }
+      const filtered = prev.filter((vehicle) => vehicle.id !== id)
+      if (activeVehicleId === id) {
+        setActiveVehicleId(filtered[0]?.id)
+      }
+      return filtered
+    })
+    setPartName('')
+    setPartExpiryDate('')
+    setEditingPart(null)
   }
 
   const handleAddPart = () => {
@@ -167,12 +228,15 @@ function App() {
       .find((part) => part.name.toLowerCase() === normalizedName)
 
     if (builtInMatch) {
-      setPartExpirations((prev) => ({
-        ...prev,
-        [builtInMatch.name]: {
-          createdAt,
-          expiresAt,
-          durationMs
+      updateCurrentVehicle((vehicle) => ({
+        ...vehicle,
+        partExpirations: {
+          ...vehicle.partExpirations,
+          [builtInMatch.name]: {
+            createdAt,
+            expiresAt,
+            durationMs
+          }
         }
       }))
       setPartName('')
@@ -190,22 +254,32 @@ function App() {
       durationMs
     }
 
-    setCustomParts((prev) => [newPart, ...prev])
+    updateCurrentVehicle((vehicle) => ({
+      ...vehicle,
+      customParts: [newPart, ...vehicle.customParts]
+    }))
     setPartName('')
     setPartExpiryDate('')
   }
 
   const handleRemovePart = (id) => {
-    setCustomParts((prev) => prev.filter((part) => part.id !== id))
+    updateCurrentVehicle((vehicle) => ({
+      ...vehicle,
+      customParts: vehicle.customParts.filter((part) => part.id !== id)
+    }))
   }
 
   const handleRemoveBuiltInPart = (name) => {
-    setRemovedParts((prev) => [...prev, name])
+    updateCurrentVehicle((vehicle) => ({
+      ...vehicle,
+      removedParts: [...vehicle.removedParts, name]
+    }))
   }
 
   const handleResetPart = (id) => {
-    setCustomParts((prev) =>
-      prev.map((part) =>
+    updateCurrentVehicle((vehicle) => ({
+      ...vehicle,
+      customParts: vehicle.customParts.map((part) =>
         part.id === id
           ? {
               ...part,
@@ -214,30 +288,23 @@ function App() {
             }
           : part
       )
-    )
+    }))
   }
 
   const handleResetBuiltInPart = (name) => {
-    setPartExpirations((prev) => {
-      const entry = prev[name]
+    updateCurrentVehicle((vehicle) => {
+      const entry = vehicle.partExpirations[name]
       if (!entry) {
-        return prev
+        return vehicle
       }
       return {
-        ...prev,
-        [name]: { ...entry, createdAt: Date.now(), durationMs: Math.max(entry.expiresAt - Date.now(), 0) }
+        ...vehicle,
+        partExpirations: {
+          ...vehicle.partExpirations,
+          [name]: { ...entry, createdAt: Date.now(), durationMs: Math.max(entry.expiresAt - Date.now(), 0) }
+        }
       }
     })
-  }
-
-  const getProgress = (part) => {
-    if (!part.durationMs || !part.createdAt) {
-      return 0
-    }
-
-    // eslint-disable-next-line react-hooks/purity
-    const elapsed = Date.now() - part.createdAt
-    return Math.min(Math.max(elapsed / part.durationMs, 0), 1)
   }
 
   const formatDate = (timestamp) =>
@@ -247,6 +314,65 @@ function App() {
       year: 'numeric'
     })
 
+  const formatDateInput = (timestamp) => {
+    if (!timestamp) return ''
+    const date = new Date(timestamp)
+    if (Number.isNaN(date.getTime())) return ''
+    return date.toISOString().slice(0, 10)
+  }
+
+  const startEditingPart = (part, isCustom) => {
+    setEditingPart({ type: isCustom ? 'custom' : 'built-in', key: isCustom ? part.id : part.name })
+    setEditName(part.name || '')
+    setEditDate(formatDateInput(part.expiresAt || currentVehicle?.partExpirations?.[part.name]?.expiresAt))
+  }
+
+  const cancelEditing = () => {
+    setEditingPart(null)
+    setEditName('')
+    setEditDate('')
+  }
+
+  const saveEditedPart = () => {
+    if (!editingPart || !editDate) return
+    const expiresAt = new Date(editDate).getTime()
+    if (Number.isNaN(expiresAt)) return
+    const createdAt = Date.now()
+    const durationMs = Math.max(expiresAt - createdAt, 0)
+
+    if (editingPart.type === 'custom') {
+      updateCurrentVehicle((vehicle) => ({
+        ...vehicle,
+        customParts: vehicle.customParts.map((part) =>
+          part.id === editingPart.key
+            ? {
+                ...part,
+                name: editName.trim() || part.name,
+                interval: `Expires on ${editDate}`,
+                createdAt,
+                expiresAt,
+                durationMs
+              }
+            : part
+        )
+      }))
+    } else {
+      updateCurrentVehicle((vehicle) => ({
+        ...vehicle,
+        partExpirations: {
+          ...vehicle.partExpirations,
+          [editingPart.key]: {
+            createdAt,
+            expiresAt,
+            durationMs
+          }
+        }
+      }))
+    }
+
+    cancelEditing()
+  }
+
   return (
     <main className={`page ${isNightMode ? 'is-night' : ''}`}>
       <div className="background-glow background-glow--left" />
@@ -255,7 +381,26 @@ function App() {
       <section className="hero">
         <div className="hero-actions">
           <div className="auth-panel">
-            <div id="google-signin-button" className="google-signin-button" />
+            {!googleUser ? <div id="google-signin-button" className="google-signin-button" /> : null}
+            {googleUser ? (
+              <div className="google-signed-in" role="status">
+                {googleUser.picture ? (
+                  <img
+                    className="google-avatar"
+                    src={googleUser.picture}
+                    alt={`${googleUser.name || 'Google user'} avatar`}
+                  />
+                ) : (
+                  <span className="google-avatar google-avatar--fallback" aria-hidden>
+                    G
+                  </span>
+                )}
+                <div>
+                  <span className="google-status">Signed in with Google</span>
+                  <span className="google-name">{googleUser.name || googleUser.email}</span>
+                </div>
+              </div>
+            ) : null}
             {!GOOGLE_CLIENT_ID ? (
               <span className="auth-note">
                 Set <strong>VITE_GOOGLE_CLIENT_ID</strong> in your <code>.env</code> to enable Google
@@ -272,49 +417,65 @@ function App() {
             {isNightMode ? 'Day mode' : 'Night mode'}
           </button>
         </div>
-        <p className="eyebrow">Next drive, unlocked</p>
+        <p className="eyebrow">Maintenance dashboard</p>
         <h1>
-          Choose your
-          <span className="highlight"> perfect fit</span>
+          Track every
+          <span className="highlight"> car part</span>
         </h1>
         <p className="lede">
-          Pick a category. Tune the vibe. Keep the journey smooth.
+          Log expiration dates and stay on top of replacements.
         </p>
 
-        {!selectedOption ? (
-          <div className="options-grid">
-            {options.map((option) => (
-              <button
-                key={option.label}
-                className="option-card"
-                type="button"
-                onClick={() => handleSelect(option)}
-              >
-                <span className="option-icon" aria-hidden>
-                  {option.icon}
-                </span>
-                <div className="option-content">
-                  <div className="option-header">
-                    <h2>{option.label}</h2>
-                    <span className="badge">{option.badge}</span>
-                  </div>
-                  <p>{option.description}</p>
-                </div>
-                <span className="option-arrow" aria-hidden>
-                  →
-                </span>
-              </button>
-          ))}
-        </div>
-      ) : (
-          <div className="model-section reveal">
-            <div className="model-panel">
-              <div className="model-glow" />
-              <div className="model-meta">
-                <div className="pill">Selected · {selectedOption.label}</div>
-                <h2 className="model-name">{vehicleName || selectedOption.model}</h2>
-                <p className="model-description">{selectedOption.description}</p>
+        <div className="model-section reveal">
+          <div className="model-panel">
+            <div className="model-glow" />
+            <div className="vehicle-switcher">
+              <div className="vehicle-switcher-header">
+                <span className="vehicle-label">Your vehicles</span>
+                <button
+                  className="vehicle-add"
+                  type="button"
+                  onClick={handleAddVehicle}
+                >
+                  Add another vehicle
+                </button>
               </div>
+              <div className="vehicle-list">
+                {vehicles.map((vehicle) => (
+                  <div
+                    key={vehicle.id}
+                    className={`vehicle-chip ${vehicle.id === currentVehicle?.id ? 'is-active' : ''}`}
+                  >
+                    <button
+                      className="vehicle-select"
+                      type="button"
+                      onClick={() => {
+                        setActiveVehicleId(vehicle.id)
+                        setEditingPart(null)
+                        setPartName('')
+                        setPartExpiryDate('')
+                      }}
+                    >
+                      {vehicle.vehicleName || vehicle.optionLabel}
+                    </button>
+                    <button
+                      className="vehicle-remove"
+                      type="button"
+                      onClick={() => handleRemoveVehicle(vehicle.id)}
+                      aria-label={`Remove ${vehicle.vehicleName || vehicle.optionLabel}`}
+                      disabled={vehicles.length <= 1}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="model-meta">
+              <div className="pill">Tracking · {currentOption.label}</div>
+              <h2 className="model-name">{currentVehicle?.vehicleName || currentOption.model}</h2>
+              <p className="model-description">{currentOption.description}</p>
+            </div>
 
               <div className="model-visual">
                 <Suspense fallback={<div className="model-fallback">Loading model...</div>}>
@@ -323,7 +484,7 @@ function App() {
                     <ambientLight intensity={0.5} />
                     <directionalLight position={[2.5, 3, 2]} intensity={1.2} />
                     <spotLight position={[-2, 3, -2]} angle={0.45} intensity={0.6} />
-                    <VehicleModel type={selectedOption.label} color={selectedColor} />
+                    <VehicleModel type={currentOption.label} color={currentVehicle?.selectedColor} />
                     <OrbitControls
                       enableZoom={false}
                       enablePan={false}
@@ -335,26 +496,36 @@ function App() {
               </div>
 
               <label className="name-field">
-                <span>Name your vehicle</span>
+                <span>Label your vehicle</span>
                 <input
                   type="text"
-                  value={vehicleName}
+                  value={currentVehicle?.vehicleName || ''}
                   placeholder="e.g., Midnight Cruiser"
-                  onChange={(e) => setVehicleName(e.target.value)}
+                  onChange={(event) =>
+                    updateCurrentVehicle((vehicle) => ({
+                      ...vehicle,
+                      vehicleName: event.target.value
+                    }))
+                  }
                 />
               </label>
 
               <div className="palette">
-                <span className="palette-label">Choose a color</span>
+                <span className="palette-label">Pick a paint color</span>
                 <div className="swatches">
-                  {selectedOption.colors.map((color) => (
+                  {currentOption.colors.map((color) => (
                     <button
                       key={color.hex}
-                      className={`swatch ${selectedColor === color.hex ? 'is-active' : ''}`}
+                      className={`swatch ${currentVehicle?.selectedColor === color.hex ? 'is-active' : ''}`}
                       type="button"
                       style={{ backgroundColor: color.hex }}
                       aria-label={`${color.name} color`}
-                      onClick={() => setSelectedColor(color.hex)}
+                      onClick={() =>
+                        updateCurrentVehicle((vehicle) => ({
+                          ...vehicle,
+                          selectedColor: color.hex
+                        }))
+                      }
                     >
                       <span className="sr-only">{color.name}</span>
                     </button>
@@ -364,22 +535,25 @@ function App() {
 
                 <div className="parts-card">
                   <div className="parts-header">
-                    <h3>Key parts</h3>
-                    <span className="badge subtle">Maintenance</span>
+                    <h3>Parts list</h3>
+                    <span className="badge subtle">Schedule</span>
                   </div>
                 <div className="parts-grid">
-                  {[...customParts, ...(selectedOption.parts || [])].length > 0 ? (
-                    [...customParts, ...(selectedOption.parts || [])]
-                      .filter((part) => !removedParts.includes(part.name))
+                  {[...(currentVehicle?.customParts || []), ...(currentOption.parts || [])].length > 0 ? (
+                    [...(currentVehicle?.customParts || []), ...(currentOption.parts || [])]
+                      .filter((part) => !(currentVehicle?.removedParts || []).includes(part.name))
                       .map((part) => {
-                      const expiration = part.isCustom ? part : partExpirations[part.name]
-                      const progress = expiration ? getProgress(expiration) : 0
+                      const expiration = part.isCustom
+                        ? part
+                        : currentVehicle?.partExpirations?.[part.name]
+                      const isEditing =
+                        editingPart?.type === (part.isCustom ? 'custom' : 'built-in') &&
+                        editingPart?.key === (part.isCustom ? part.id : part.name)
                       // eslint-disable-next-line react-hooks/purity
                       const remainingMs = expiration ? expiration.durationMs - (Date.now() - expiration.createdAt) : null
                       const remainingDays =
                         expiration && remainingMs > 0 ? Math.ceil(remainingMs / (24 * 60 * 60 * 1000)) : 0
                       const isDue = expiration ? remainingMs <= 0 : false
-                      const isCritical = expiration ? progress >= 0.8 : false
                       const statusLabel = expiration
                         ? isDue
                           ? 'Replace now'
@@ -388,15 +562,23 @@ function App() {
                       const expiryLabel = expiration ? `Expires on ${formatDate(expiration.expiresAt)}` : 'No expiry set'
 
                       return (
-                      <div key={part.id || part.name} className="part-chip" role="button" tabIndex={0}>
-                        <div className="part-chip-row">
-                          <div className="part-name">{part.name}</div>
-                          <div className="part-actions">
-                            <button
-                              className="part-reset"
-                              type="button"
-                              onClick={
-                                part.isCustom
+                        <div key={part.id || part.name} className="part-chip" role="button" tabIndex={0}>
+                          <div className="part-chip-row">
+                            <div className="part-name">{part.name}</div>
+                            <div className="part-actions">
+                              <button
+                                className="part-edit"
+                                type="button"
+                                onClick={() => startEditingPart(part, part.isCustom)}
+                                aria-label={`Edit ${part.name}`}
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                className="part-reset"
+                                type="button"
+                                onClick={
+                                  part.isCustom
                                   ? () => handleResetPart(part.id)
                                   : () => handleResetBuiltInPart(part.name)
                               }
@@ -419,23 +601,50 @@ function App() {
                             </button>
                           </div>
                         </div>
+                        {isEditing ? (
+                          <div className="part-edit-fields">
+                            <label className="part-edit-field">
+                              <span>Name</span>
+                              <input
+                                className="part-edit-input"
+                                type="text"
+                                value={editName}
+                                onChange={(event) => setEditName(event.target.value)}
+                                disabled={!part.isCustom}
+                              />
+                            </label>
+                            <label className="part-edit-field">
+                              <span>Expiration date</span>
+                              <input
+                                className="part-edit-input"
+                                type="date"
+                                value={editDate}
+                                onChange={(event) => setEditDate(event.target.value)}
+                              />
+                            </label>
+                            <div className="part-edit-actions">
+                              <button
+                                className="part-edit-save"
+                                type="button"
+                                onClick={saveEditedPart}
+                                disabled={!editDate}
+                              >
+                                Save
+                              </button>
+                              <button className="part-edit-cancel" type="button" onClick={cancelEditing}>
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : null}
                         <div className="part-interval">
                           {part.interval || 'Mileage coming soon'}
                           {part.isCustom ? <span className="part-tag">Custom log</span> : null}
                         </div>
                         <div className="part-expiry">{expiryLabel}</div>
                         {expiration ? (
-                          <div className="part-progress" style={{ '--progress': progress }}>
-                            <div className="part-progress-track" aria-hidden>
-                              <div
-                                className={`part-progress-fill${isDue || isCritical ? ' is-critical' : ''}`}
-                                style={{ width: `${progress * 100}%` }}
-                              />
-                              <div className="part-progress-marker" />
-                            </div>
-                            <div className={`part-progress-label ${isDue ? 'is-due' : ''}`}>
-                              {statusLabel}
-                            </div>
+                          <div className={`part-progress-label ${isDue ? 'is-due' : ''}`}>
+                            {statusLabel}
                           </div>
                         ) : null}
                       </div>
@@ -450,10 +659,10 @@ function App() {
 
                 <div className="parts-card maintenance-card">
                   <div className="parts-header">
-                    <h3>Part age tracker</h3>
-                    <span className="badge subtle">Log</span>
+                    <h3>Add a part</h3>
+                    <span className="badge subtle">Tracker</span>
                   </div>
-                  <p className="card-note">Add the exact expiration date for a precise countdown.</p>
+                  <p className="card-note">Log expiration dates to keep reminders accurate.</p>
                   <div className="tracker-grid">
                     <label className="name-field">
                       <span>Part name</span>
@@ -473,7 +682,7 @@ function App() {
                       />
                     </label>
                     <div className="tracker-actions">
-                      <span className="tracker-label">Add to list</span>
+                      <span className="tracker-label">Add to tracker</span>
                       <button
                         className="tracker-button"
                         type="button"
@@ -488,10 +697,10 @@ function App() {
                     <span className="tracker-dot" aria-hidden />
                     {partName && partExpiryDate ? (
                       <span>
-                        Tracking {partName} · Expires on {partExpiryDate}
+                        Tracking {partName} · Expires {partExpiryDate}
                       </span>
                     ) : (
-                      <span>Enter a part and its expiration date to start tracking.</span>
+                      <span>Enter a part and expiration date to start tracking.</span>
                     )}
                   </div>
                 </div>
@@ -500,14 +709,10 @@ function App() {
 
             <div className="footnote">
               <span className="dot" aria-hidden />
-              Start customizing your {selectedOption.label.toLowerCase()} or{' '}
-              <button className="link-button" type="button" onClick={handleReset}>
-                choose a different category
-              </button>
+              Review parts for your {currentOption.label.toLowerCase()} or add another vehicle above.
               .
             </div>
           </div>
-        )}
       </section>
     </main>
   )
