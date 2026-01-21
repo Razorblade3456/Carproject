@@ -11,8 +11,8 @@ function App() {
     {
       label: 'Sedan',
       model: 'Aurora S3',
-      description: 'Quiet cabin. Sharp handling. Easy city moves.',
-      badge: 'Smooth & Efficient',
+      description: 'Keep daily-driver parts on a clean maintenance cadence.',
+      badge: 'Daily Maintenance',
       icon: '🚗',
       parts: [
         { name: 'Engine Oil', interval: '5,000–7,500 miles (6–9 months)' },
@@ -37,8 +37,8 @@ function App() {
     {
       label: 'Truck',
       model: 'RidgeLine X',
-      description: 'Built for payloads and weekend missions.',
-      badge: 'Strength & Utility',
+      description: 'Stay ahead of heavy-duty wear and replacement dates.',
+      badge: 'Workhorse Care',
       icon: '🛻',
       parts: [
         { name: 'Engine Oil', interval: '5,000–7,500 miles (6–9 months)' },
@@ -65,8 +65,8 @@ function App() {
     {
       label: 'SUV',
       model: 'Atlas E7',
-      description: 'Spacious, calm, and ready for any weather.',
-      badge: 'Comfort & Control',
+      description: 'Track family-ready parts and service timelines.',
+      badge: 'All-Weather Ready',
       icon: '🚙',
       parts: [
         { name: 'Engine Oil', interval: '5,000–7,500 miles (6–9 months)' },
@@ -462,13 +462,13 @@ function App() {
             {isNightMode ? 'Day mode' : 'Night mode'}
           </button>
         </div>
-        <p className="eyebrow">Next drive, unlocked</p>
+        <p className="eyebrow">Maintenance dashboard</p>
         <h1>
-          Choose your
-          <span className="highlight"> perfect fit</span>
+          Track every
+          <span className="highlight"> car part</span>
         </h1>
         <p className="lede">
-          Pick a category. Tune the vibe. Keep the journey smooth.
+          Log expiration dates and stay on top of replacements.
         </p>
 
         {!selectedOption ? (
@@ -501,7 +501,7 @@ function App() {
             <div className="model-panel">
               <div className="model-glow" />
               <div className="model-meta">
-                <div className="pill">Selected · {selectedOption.label}</div>
+                <div className="pill">Tracking · {selectedOption.label}</div>
                 <h2 className="model-name">{vehicleName || selectedOption.model}</h2>
                 <p className="model-description">{selectedOption.description}</p>
               </div>
@@ -525,7 +525,7 @@ function App() {
               </div>
 
               <label className="name-field">
-                <span>Name your vehicle</span>
+                <span>Label your vehicle</span>
                 <input
                   type="text"
                   value={vehicleName}
@@ -535,7 +535,7 @@ function App() {
               </label>
 
               <div className="palette">
-                <span className="palette-label">Choose a color</span>
+                <span className="palette-label">Pick a paint color</span>
                 <div className="swatches">
                   {selectedOption.colors.map((color) => (
                     <button
@@ -554,8 +554,8 @@ function App() {
 
                 <div className="parts-card">
                   <div className="parts-header">
-                    <h3>Key parts</h3>
-                    <span className="badge subtle">Maintenance</span>
+                    <h3>Parts list</h3>
+                    <span className="badge subtle">Schedule</span>
                   </div>
                 <div className="parts-grid">
                   {[...customParts, ...(selectedOption.parts || [])].length > 0 ? (
@@ -687,10 +687,10 @@ function App() {
 
                 <div className="parts-card maintenance-card">
                   <div className="parts-header">
-                    <h3>Part age tracker</h3>
-                    <span className="badge subtle">Log</span>
+                    <h3>Add a part</h3>
+                    <span className="badge subtle">Tracker</span>
                   </div>
-                  <p className="card-note">Add the exact expiration date for a precise countdown.</p>
+                  <p className="card-note">Log expiration dates to keep reminders accurate.</p>
                   <div className="tracker-grid">
                     <label className="name-field">
                       <span>Part name</span>
@@ -710,7 +710,7 @@ function App() {
                       />
                     </label>
                     <div className="tracker-actions">
-                      <span className="tracker-label">Add to list</span>
+                      <span className="tracker-label">Add to tracker</span>
                       <button
                         className="tracker-button"
                         type="button"
@@ -725,10 +725,10 @@ function App() {
                     <span className="tracker-dot" aria-hidden />
                     {partName && partExpiryDate ? (
                       <span>
-                        Tracking {partName} · Expires on {partExpiryDate}
+                        Tracking {partName} · Expires {partExpiryDate}
                       </span>
                     ) : (
-                      <span>Enter a part and its expiration date to start tracking.</span>
+                      <span>Enter a part and expiration date to start tracking.</span>
                     )}
                   </div>
                 </div>
@@ -737,9 +737,9 @@ function App() {
 
             <div className="footnote">
               <span className="dot" aria-hidden />
-              Start customizing your {selectedOption.label.toLowerCase()} or{' '}
+              Review parts for your {selectedOption.label.toLowerCase()} or{' '}
               <button className="link-button" type="button" onClick={handleReset}>
-                choose a different category
+                choose a different vehicle
               </button>
               .
             </div>
